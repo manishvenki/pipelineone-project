@@ -66,3 +66,4 @@ test('Dockerfile Generator - .dockerignore content', () => {
   assert.ok(ignore.includes('node_modules'));
   assert.ok(ignore.includes('*.pem'));
 });
+

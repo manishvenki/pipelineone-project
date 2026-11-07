@@ -249,3 +249,4 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
 };
 
 export default IntegrationDetailsModal;
+

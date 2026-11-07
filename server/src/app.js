@@ -16,6 +16,8 @@ import dockerBuildRoutes from './routes/dockerBuildRoutes.js';
 import dockerHubRoutes from './routes/dockerHubRoutes.js';
 import jenkinsRoutes from './routes/jenkinsRoutes.js';
 import vercelRoutes from './routes/vercelRoutes.js';
+import pipelineRoutes from './routes/pipelineRoutes.js';
+import webhookRoutes from './routes/webhookRoutes.js';
 
 const app = express();
 
@@ -51,7 +53,14 @@ app.use(
 );
 
 // Body and Cookie Parsers
-app.use(express.json({ limit: '10mb' }));
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf ? buf.toString('utf8') : '';
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
@@ -70,6 +79,10 @@ app.use('/api/docker', dockerBuildRoutes);
 app.use('/api/dockerhub', dockerHubRoutes);
 app.use('/api/jenkins', jenkinsRoutes);
 app.use('/api/vercel', vercelRoutes);
+
+// Phase 3 Orchestration & Webhooks routes
+app.use('/api/pipelines', pipelineRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Root route
 app.get('/', (req, res) => {

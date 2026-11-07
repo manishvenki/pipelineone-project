@@ -21,3 +21,4 @@ router.get('/projects', requireAuth, vercelController.getProjects);
 router.post('/configure', requireAuth, vercelController.configureProject);
 
 export default router;
+

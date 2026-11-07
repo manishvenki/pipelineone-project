@@ -189,3 +189,4 @@ test('Phase 2 API - Docker Build Lifecycle (Trigger, List, Logs, Cancel)', async
   const cancelData = await cancelRes.json();
   assert.equal(cancelData.success, true);
 });
+

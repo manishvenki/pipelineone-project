@@ -15,6 +15,9 @@ import {
   Calendar,
   AlertCircle,
   Loader2,
+  Settings,
+  Rocket,
+  Play,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getProjects, deleteProject } from '../services/projectService';
@@ -23,6 +26,8 @@ import Badge from '../components/common/Badge';
 import RepoSelectorModal from '../components/projects/RepoSelectorModal';
 import UploadZipModal from '../components/projects/UploadZipModal';
 import ConnectGitHubModal from '../components/integrations/ConnectGitHubModal';
+import PipelineConfigModal from '../components/pipelines/PipelineConfigModal';
+import TriggerPipelineModal from '../components/pipelines/TriggerPipelineModal';
 
 export const ProjectsPage = () => {
   const { user } = useAuth();
@@ -36,6 +41,8 @@ export const ProjectsPage = () => {
   const [isRepoSelectorOpen, setIsRepoSelectorOpen] = useState(false);
   const [isUploadZipOpen, setIsUploadZipOpen] = useState(false);
   const [isConnectGitHubOpen, setIsConnectGitHubOpen] = useState(false);
+  const [configModalProject, setConfigModalProject] = useState(null);
+  const [triggerModalProjectId, setTriggerModalProjectId] = useState(null);
 
   const notify = useNotification();
   const isGitHubConnected = Boolean(user?.integrations?.github?.connected);
@@ -263,10 +270,32 @@ export const ProjectsPage = () => {
 
               {/* Card Footer */}
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(p.created_at).toLocaleDateString()}
-                </span>
+                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setConfigModalProject(p);
+                    }}
+                    title="Configure CI/CD Pipeline"
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTriggerModalProjectId(p.id);
+                    }}
+                    title="Deploy Pipeline"
+                    className="px-2 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white transition-colors font-medium flex items-center gap-1"
+                  >
+                    <Play className="w-3 h-3 fill-current" /> Deploy
+                  </button>
+                </div>
                 <span className="text-blue-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
                   Inspect <ExternalLink className="w-3 h-3" />
                 </span>
@@ -293,6 +322,19 @@ export const ProjectsPage = () => {
         isOpen={isConnectGitHubOpen}
         onClose={() => setIsConnectGitHubOpen(false)}
         onConnected={() => setIsRepoSelectorOpen(true)}
+      />
+
+      <PipelineConfigModal
+        isOpen={!!configModalProject}
+        onClose={() => setConfigModalProject(null)}
+        project={configModalProject}
+        onConfigSaved={() => loadProjects()}
+      />
+
+      <TriggerPipelineModal
+        isOpen={!!triggerModalProjectId}
+        onClose={() => setTriggerModalProjectId(null)}
+        initialProjectId={triggerModalProjectId}
       />
     </div>
   );

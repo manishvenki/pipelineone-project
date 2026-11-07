@@ -64,3 +64,4 @@ CREATE TABLE IF NOT EXISTS platform_connection_metadata (
 );
 
 CREATE INDEX IF NOT EXISTS idx_platform_metadata_user ON platform_connection_metadata(user_id);
+

@@ -27,22 +27,43 @@ import {
   Check,
   XCircle,
   StopCircle,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  Webhook,
+  RotateCcw,
+  GitCommit
 } from 'lucide-react';
 import { getProjectById, deleteProject } from '../services/projectService';
 import { listDockerBuilds } from '../services/integrationService';
+import {
+  listPipelineExecutions,
+  retryPipelineExecution,
+  cancelPipelineExecution
+} from '../services/pipelineService';
 import { useNotification } from '../context/NotificationContext';
 import Badge from '../components/common/Badge';
 import DockerBuildModal from '../components/builds/DockerBuildModal';
+import StageProgressionBar from '../components/pipelines/StageProgressionBar';
+import PipelineConfigModal from '../components/pipelines/PipelineConfigModal';
+import TriggerPipelineModal from '../components/pipelines/TriggerPipelineModal';
+import WebhookInfoModal from '../components/pipelines/WebhookInfoModal';
 
 export const ProjectDetailPage = () => {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview'); // overview, source, deployments
+  const [activeTab, setActiveTab] = useState('overview'); // overview, pipelines, source, deployments
   const [deleting, setDeleting] = useState(false);
+
+  // Builds state
   const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
   const [builds, setBuilds] = useState([]);
+
+  // Pipeline states
+  const [pipelineExecutions, setPipelineExecutions] = useState([]);
+  const [isPipelineConfigOpen, setIsPipelineConfigOpen] = useState(false);
+  const [isTriggerPipelineOpen, setIsTriggerPipelineOpen] = useState(false);
+  const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
 
   const notify = useNotification();
   const navigate = useNavigate();
@@ -50,6 +71,7 @@ export const ProjectDetailPage = () => {
   useEffect(() => {
     loadProject();
     loadBuilds();
+    loadPipelineRuns();
   }, [id]);
 
   const loadProject = async () => {
@@ -75,6 +97,17 @@ export const ProjectDetailPage = () => {
     }
   };
 
+  const loadPipelineRuns = async () => {
+    try {
+      const res = await listPipelineExecutions({ projectId: id });
+      if (res.executions) {
+        setPipelineExecutions(res.executions);
+      }
+    } catch (err) {
+      console.error('Failed to load pipeline executions', err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm(`Are you sure you want to delete project "${project?.name}"?`)) {
       return;
@@ -88,6 +121,26 @@ export const ProjectDetailPage = () => {
     } catch (err) {
       notify.error(err.response?.data?.error || 'Failed to delete project');
       setDeleting(false);
+    }
+  };
+
+  const handleRetryPipeline = async (executionId) => {
+    try {
+      await retryPipelineExecution(executionId);
+      notify.success('Pipeline retry triggered');
+      loadPipelineRuns();
+    } catch (err) {
+      notify.error(err.response?.data?.message || err.message || 'Retry failed');
+    }
+  };
+
+  const handleCancelPipeline = async (executionId) => {
+    try {
+      await cancelPipelineExecution(executionId);
+      notify.success('Pipeline cancelled');
+      loadPipelineRuns();
+    } catch (err) {
+      notify.error(err.response?.data?.message || err.message || 'Cancel failed');
     }
   };
 
@@ -118,15 +171,19 @@ export const ProjectDetailPage = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed':
+      case 'success':
         return (
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
             <CheckCircle2 className="w-3 h-3" /> Completed
           </span>
         );
       case 'in_progress':
+      case 'running':
+      case 'deploying':
+      case 'building':
         return (
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
-            <Loader2 className="w-3 h-3 animate-spin" /> In Progress
+            <Loader2 className="w-3 h-3 animate-spin" /> {status.replace('_', ' ')}
           </span>
         );
       case 'failed':
@@ -135,19 +192,25 @@ export const ProjectDetailPage = () => {
             <XCircle className="w-3 h-3" /> Failed
           </span>
         );
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            <StopCircle className="w-3 h-3" /> Cancelled
+          </span>
+        );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400">
-            {status}
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400 capitalize">
+            {status?.replace('_', ' ')}
           </span>
         );
     }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* Breadcrumb & Top Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <Link
           to="/dashboard/projects"
           className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors"
@@ -155,19 +218,35 @@ export const ProjectDetailPage = () => {
           <ArrowLeft className="w-4 h-4" /> Back to My Projects
         </Link>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setIsBuildModalOpen(true)}
-            className="px-3.5 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-500 font-medium rounded-xl transition shadow-md shadow-blue-900/30 flex items-center gap-1.5"
+            onClick={() => setIsPipelineConfigOpen(true)}
+            className="px-3 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 font-medium rounded-xl border border-slate-700/60 transition flex items-center gap-1.5"
           >
-            <Container className="w-3.5 h-3.5" />
-            Build Docker Image
+            <Settings className="w-3.5 h-3.5 text-slate-400" />
+            Config
+          </button>
+
+          <button
+            onClick={() => setIsWebhookModalOpen(true)}
+            className="px-3 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 font-medium rounded-xl border border-slate-700/60 transition flex items-center gap-1.5"
+          >
+            <Webhook className="w-3.5 h-3.5 text-blue-400" />
+            Webhook
+          </button>
+
+          <button
+            onClick={() => setIsTriggerPipelineOpen(true)}
+            className="px-3.5 py-1.5 text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-semibold rounded-xl transition shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+          >
+            <Play className="w-3.5 h-3.5 fill-white" />
+            Deploy Pipeline
           </button>
 
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="px-3.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-500/30 rounded-xl transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-500/30 rounded-xl transition-colors flex items-center gap-1.5"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {deleting ? 'Deleting...' : 'Delete'}
@@ -182,12 +261,12 @@ export const ProjectDetailPage = () => {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-white tracking-tight">{project.name}</h1>
               <Badge variant="primary" size="sm">
-                {project.project_type}
+                {project.project_type || 'Static Site'}
               </Badge>
               <Badge variant={isGitHub ? 'default' : 'violet'} size="sm">
                 {isGitHub ? (
                   <>
-                    <Github className="w-3 h-3" /> GitHub
+                    <Github className="w-3 h-3" /> GitHub Repo
                   </>
                 ) : (
                   <>
@@ -196,22 +275,30 @@ export const ProjectDetailPage = () => {
                 )}
               </Badge>
             </div>
-            <p className="text-xs text-slate-400 max-w-2xl">
-              {project.description || 'Static web application deployment pipeline'}
+            <p className="text-xs text-slate-400 max-w-xl">
+              {project.description || 'Static website project configured for automated continuous deployment.'}
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 space-y-1 font-mono">
-            <div>Slug: <span className="text-slate-300">{project.slug}</span></div>
-            <div>Created: <span className="text-slate-300">{new Date(project.created_at).toLocaleDateString()}</span></div>
+          {/* Quick Metrics */}
+          <div className="flex items-center gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs">
+            <div>
+              <span className="text-[10px] text-slate-500 block uppercase">Pipelines</span>
+              <span className="font-bold text-white">{pipelineExecutions.length} runs</span>
+            </div>
+            <div className="h-6 w-px bg-slate-800" />
+            <div>
+              <span className="text-[10px] text-slate-500 block uppercase">Docker</span>
+              <span className="font-bold text-white">{builds.length} images</span>
+            </div>
           </div>
         </div>
 
-        {/* Tab navigation */}
-        <div className="flex border-b border-slate-800 pt-2 gap-4 text-xs font-medium">
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-6 border-t border-slate-800/80 pt-4 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`pb-2.5 transition-colors border-b-2 flex items-center gap-1.5 ${
+            className={`pb-2 transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'overview'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -219,9 +306,26 @@ export const ProjectDetailPage = () => {
           >
             <Sparkles className="w-3.5 h-3.5" /> Static Architecture
           </button>
+
+          <button
+            onClick={() => setActiveTab('pipelines')}
+            className={`pb-2 transition-colors border-b-2 flex items-center gap-1.5 ${
+              activeTab === 'pipelines'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Rocket className="w-3.5 h-3.5" /> CI/CD Deployments
+            {pipelineExecutions.length > 0 && (
+              <span className="px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded-full text-[10px]">
+                {pipelineExecutions.length}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => setActiveTab('source')}
-            className={`pb-2.5 transition-colors border-b-2 flex items-center gap-1.5 ${
+            className={`pb-2 transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'source'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -230,16 +334,16 @@ export const ProjectDetailPage = () => {
             {isGitHub ? <Github className="w-3.5 h-3.5" /> : <FileCode className="w-3.5 h-3.5" />}
             {isGitHub ? 'Repository Details' : 'Extracted Files'}
           </button>
+
           <button
             onClick={() => setActiveTab('deployments')}
-            className={`pb-2.5 transition-colors border-b-2 flex items-center gap-1.5 ${
+            className={`pb-2 transition-colors border-b-2 flex items-center gap-1.5 ${
               activeTab === 'deployments'
                 ? 'border-blue-500 text-blue-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Rocket className="w-3.5 h-3.5" /> Container & Builds
-            <span className="w-2 h-2 rounded-full bg-blue-500 ml-1" />
+            <Container className="w-3.5 h-3.5" /> Docker Builds
           </button>
         </div>
       </div>
@@ -268,8 +372,8 @@ export const ProjectDetailPage = () => {
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
                 <span className="text-slate-400">Platform Status</span>
-                <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {project.status || 'Ready'}
+                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> CI/CD Automation Ready
                 </span>
               </div>
             </div>
@@ -277,117 +381,229 @@ export const ProjectDetailPage = () => {
 
           <div className="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Container className="w-4 h-4 text-purple-400" /> Container Packaging Specs
+              <Rocket className="w-4 h-4 text-emerald-400" /> Deployment Destinations
             </h3>
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-2.5 font-mono">
-              <div className="text-slate-500"># Docker multi-stage generator</div>
-              <div>project: {project.slug}</div>
-              <div>base_image: {project.project_type === 'react_vite' ? 'node:20-alpine -> nginx:alpine-slim' : 'nginx:alpine-slim'}</div>
-              <div>publish_dir: {project.output_directory || '.'}</div>
-              <div>exposed_port: 80/tcp</div>
-              <div className="text-emerald-400 pt-2 flex items-center gap-1.5 font-sans">
-                <CheckCircle2 className="w-4 h-4" /> Ready for Docker Containerization Engine
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-white">Vercel Edge Network</p>
+                  <p className="text-[11px] text-slate-400">Direct static delivery to edge distribution</p>
+                </div>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-semibold">
+                  Primary
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-white">Jenkins CI Engine</p>
+                  <p className="text-[11px] text-slate-400">Dynamic Declarative Jenkinsfile pipeline orchestration</p>
+                </div>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 font-semibold">
+                  Orchestrator
+                </span>
+              </div>
+
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-white">Docker Hub Container Registry</p>
+                  <p className="text-[11px] text-slate-400">Optional Nginx container image build and publishing</p>
+                </div>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 font-semibold">
+                  Optional
+                </span>
               </div>
             </div>
-
-            <button
-              onClick={() => setIsBuildModalOpen(true)}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition border border-slate-700 flex items-center justify-center gap-2"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" /> Launch Container Build Now
-            </button>
           </div>
         </div>
       )}
 
-      {/* Tab 2: Repository or Archive Details */}
+      {/* Tab 2: CI/CD Pipeline Runs */}
+      {activeTab === 'pipelines' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-emerald-400" /> CI/CD Pipeline Executions
+              </h3>
+              <p className="text-xs text-slate-400">Automated build and edge deployment history for this project.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsPipelineConfigOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition border border-slate-700 flex items-center gap-1.5"
+              >
+                <Settings className="w-3.5 h-3.5" /> Configuration
+              </button>
+              <button
+                onClick={() => setIsTriggerPipelineOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition shadow flex items-center gap-1.5"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" /> Trigger Run
+              </button>
+            </div>
+          </div>
+
+          {pipelineExecutions.length === 0 ? (
+            <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
+              <Rocket className="w-10 h-10 text-slate-600 mx-auto" />
+              <h4 className="text-sm font-semibold text-white">No pipeline executions yet</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Trigger a deployment or push code to your GitHub branch to start your first automated CI/CD pipeline run.
+              </p>
+              <button
+                onClick={() => setIsTriggerPipelineOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" /> Trigger First Run
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pipelineExecutions.map((exec) => {
+                const isRunning = !['success', 'failed', 'cancelled'].includes(exec.status);
+                return (
+                  <div
+                    key={exec.id}
+                    className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-semibold text-white font-mono">
+                          #{exec.id.substring(0, 8)}
+                        </span>
+                        {getStatusBadge(exec.status)}
+                        <span className="text-slate-400 text-[11px] capitalize">
+                          via {exec.trigger_source?.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <GitBranch className="w-3 h-3 text-blue-400" />
+                          <code className="text-slate-300 font-mono">{exec.branch}</code>
+                        </span>
+                        {exec.commit_sha && (
+                          <span className="flex items-center gap-1">
+                            <GitCommit className="w-3 h-3 text-purple-400" />
+                            <code className="text-slate-400 font-mono">
+                              {exec.commit_sha.substring(0, 7)}
+                            </code>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-slate-500" />
+                          {exec.duration_seconds ? `${exec.duration_seconds}s` : 'In progress'}
+                        </span>
+                      </div>
+
+                      {exec.commit_message && (
+                        <p className="text-[11px] text-slate-400 truncate max-w-md">
+                          {exec.commit_message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      {exec.live_url && (
+                        <a
+                          href={exec.live_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold flex items-center gap-1 border border-emerald-500/20 transition-colors"
+                        >
+                          <Globe className="w-3 h-3" /> Live Site <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+
+                      {isRunning && (
+                        <button
+                          onClick={() => handleCancelPipeline(exec.id)}
+                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs transition-colors"
+                          title="Cancel Run"
+                        >
+                          <StopCircle className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {['failed', 'cancelled'].includes(exec.status) && (
+                        <button
+                          onClick={() => handleRetryPipeline(exec.id)}
+                          className="p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs transition-colors"
+                          title="Retry Run"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      <Link
+                        to="/dashboard/deployments"
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+                      >
+                        Console <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 3: Source Repository / Extracted Files */}
       {activeTab === 'source' && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {isGitHub && project.repository ? (
             <div className="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Github className="w-4 h-4" /> Connected GitHub Repository
-                </h3>
-                {project.repository.clone_url && (
-                  <a
-                    href={project.repository.clone_url.replace('.git', '')}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-400 hover:underline flex items-center gap-1"
-                  >
-                    View on GitHub <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Github className="w-4 h-4" /> GitHub Repository Information
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Full Repository:</span>
-                  <span className="font-semibold text-white">{project.repository.full_name}</span>
+                  <span className="text-slate-400 block text-[11px]">Full Repository Name</span>
+                  <span className="text-white font-semibold font-mono">{project.repository.repo_name}</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Deployment Branch:</span>
-                  <span className="font-mono text-purple-400">{project.repository.selected_branch}</span>
+                  <span className="text-slate-400 block text-[11px]">Active Selected Branch</span>
+                  <span className="text-white font-semibold font-mono">{project.repository.selected_branch}</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Default Branch:</span>
-                  <span className="font-mono text-slate-300">{project.repository.default_branch}</span>
+                  <span className="text-slate-400 block text-[11px]">Default Branch</span>
+                  <span className="text-white font-semibold font-mono">{project.repository.default_branch}</span>
                 </div>
                 <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Visibility:</span>
-                  <span className="text-slate-300">{project.repository.is_private ? 'Private' : 'Public'}</span>
+                  <span className="text-slate-400 block text-[11px]">Visibility</span>
+                  <span className="text-white font-semibold capitalize">
+                    {project.repository.is_private ? 'Private' : 'Public'}
+                  </span>
                 </div>
               </div>
-
-              {project.repository.last_commit_sha && (
-                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs space-y-1">
-                  <div className="text-slate-500">Tracked Commit:</div>
-                  <div className="text-slate-200 font-medium">"{project.repository.last_commit_message}"</div>
-                  <div className="font-mono text-[11px] text-blue-400">{project.repository.last_commit_sha}</div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <UploadCloud className="w-4 h-4 text-purple-400" /> Extracted Archive Information
+                <Folder className="w-4 h-4 text-amber-400" /> Extracted Static Files
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Original File:</span>
-                  <span className="font-semibold text-white">{meta.originalFileName || 'project.zip'}</span>
+              {meta.sample_files && meta.sample_files.length > 0 ? (
+                <div className="space-y-1 font-mono text-xs bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  {meta.sample_files.map((file, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-slate-300">
+                      <File className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{file}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block mb-0.5">Files Count:</span>
-                  <span className="font-mono text-white">{meta.totalFilesCount || 'N/A'}</span>
-                </div>
-              </div>
-
-              {/* File Tree Preview */}
-              {meta.fileTreePreview && (
-                <div className="space-y-2">
-                  <span className="text-xs font-medium text-slate-400">Inspected Archive Structure:</span>
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 space-y-1 max-h-60 overflow-y-auto">
-                    {meta.fileTreePreview.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-slate-400">
-                        {item.type === 'directory' ? (
-                          <Folder className="w-3.5 h-3.5 text-blue-400" />
-                        ) : (
-                          <File className="w-3.5 h-3.5 text-slate-500" />
-                        )}
-                        <span>{item.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              ) : (
+                <p className="text-xs text-slate-400">All static files validated and ready for build.</p>
               )}
             </div>
           )}
         </div>
       )}
 
-      {/* Tab 3: Container & Builds */}
+      {/* Tab 4: Container & Builds */}
       {activeTab === 'deployments' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
@@ -462,6 +678,32 @@ export const ProjectDetailPage = () => {
         onBuildTriggered={(newBuild) => {
           setBuilds((prev) => [newBuild, ...prev]);
         }}
+      />
+
+      {/* Pipeline Modals */}
+      <PipelineConfigModal
+        isOpen={isPipelineConfigOpen}
+        onClose={() => setIsPipelineConfigOpen(false)}
+        project={project}
+        onConfigSaved={() => {
+          loadPipelineRuns();
+        }}
+      />
+
+      <TriggerPipelineModal
+        isOpen={isTriggerPipelineOpen}
+        onClose={() => setIsTriggerPipelineOpen(false)}
+        initialProjectId={id}
+        onTriggerSuccess={() => {
+          loadPipelineRuns();
+          setActiveTab('pipelines');
+        }}
+      />
+
+      <WebhookInfoModal
+        isOpen={isWebhookModalOpen}
+        onClose={() => setIsWebhookModalOpen(false)}
+        project={project}
       />
     </div>
   );

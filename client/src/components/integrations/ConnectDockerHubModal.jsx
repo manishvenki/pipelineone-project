@@ -129,3 +129,4 @@ export const ConnectDockerHubModal = ({ isOpen, onClose, onConnected }) => {
 };
 
 export default ConnectDockerHubModal;
+

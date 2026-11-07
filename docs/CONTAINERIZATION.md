@@ -79,3 +79,4 @@ When a build request sets `pushToDockerHub: true`:
    ```
 6. The CLI session is logged out cleanly (`docker logout`), ensuring credentials do not linger on the host.
 7. Image metadata is persisted in `docker_images`.
+

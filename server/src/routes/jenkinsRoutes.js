@@ -14,3 +14,4 @@ router.get('/jobs', jenkinsController.getJobs);
 router.get('/jobs/:jobName', jenkinsController.getJobDetails);
 
 export default router;
+

@@ -13,6 +13,12 @@ const runMigrations = async () => {
       await db.query(sql);
       logger.info('Phase 2 PostgreSQL migrations applied successfully.');
     }
+    const phase3MigrationPath = path.resolve(process.cwd(), 'src/database/phase3_migration.sql');
+    if (fs.existsSync(phase3MigrationPath)) {
+      const sql3 = fs.readFileSync(phase3MigrationPath, 'utf8');
+      await db.query(sql3);
+      logger.info('Phase 3 PostgreSQL migrations applied successfully.');
+    }
     process.exit(0);
   } else {
     logger.warn(`Migration completed in mode: ${result.mode}`);

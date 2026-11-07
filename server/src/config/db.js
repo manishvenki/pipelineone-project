@@ -27,6 +27,10 @@ const fallbackStore = {
   docker_images: new Map(),
   integration_verification_events: new Map(),
   platform_connection_metadata: new Map(),
+  pipeline_configurations: new Map(),
+  pipeline_executions: new Map(),
+  pipeline_events: new Map(),
+  github_webhook_events: new Map(),
 };
 
 /**

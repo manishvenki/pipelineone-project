@@ -99,3 +99,4 @@ To disconnect:
 - Confirm the dialog.
 - The backend removes the encrypted token from `connected_integrations` and deletes cached repository metadata.
 - Users can revoke the token on Docker Hub under Security Settings at any time.
+

@@ -122,3 +122,4 @@ If the daemon is offline, Pipeline One gracefully detects the failure:
   docker builder prune -f
   docker system prune -f
   ```
+

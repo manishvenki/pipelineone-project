@@ -98,3 +98,4 @@ Content-Type: application/json
 - **List All Jobs:** `GET /api/jenkins/jobs`
 - **Inspect Specific Job:** `GET /api/jenkins/jobs/:jobName`
 - **Click "Jobs"** on the Jenkins card in the Integrations Hub to view job names, color statuses (`blue` = success, `red` = failed, `anime` = building), and direct links.
+

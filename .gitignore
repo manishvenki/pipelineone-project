@@ -16,6 +16,7 @@ build/
 *.tsbuildinfo
 
 # Uploads and temporary project storage
+storage/
 server/uploads/*
 !server/uploads/.gitkeep
 server/storage/*
