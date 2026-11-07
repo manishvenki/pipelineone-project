@@ -48,3 +48,4 @@ Backups are archived in JSON format under `server/backups/`. Ensure offsite copy
 ```bash
 find server/storage/extracted/ -type f -mtime +30 -delete
 ```
+

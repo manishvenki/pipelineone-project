@@ -117,3 +117,4 @@ Multi-user isolation is enforced through:
 - **Row-Level Ownership Validation:** All SQL queries join against or explicitly filter by `user_id = $1`.
 - **Cross-User Protection:** User B is rejected with `404 Not Found` when attempting to query or mutate User A's projects, configurations, executions, Docker builds, or notifications.
 - **Zero Information Leakage:** Unauthorized requests return standard 404 responses rather than revealing resource existence.
+

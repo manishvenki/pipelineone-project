@@ -101,3 +101,4 @@ Generates a JSON snapshot under `server/backups/pipelineone-backup-<timestamp>.j
 node server/src/database/backupRestore.js restore server/backups/<backup-file>.json
 ```
 Truncates and restores tables in strict topological foreign-key order.
+

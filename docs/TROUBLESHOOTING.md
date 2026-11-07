@@ -34,3 +34,4 @@
   1. Start the PostgreSQL service: `sudo systemctl start postgresql` or ensure the Docker database container is healthy.
   2. Check connection parameters (`PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE`) in `.env`.
   3. Run `npm --prefix server run migrate` to apply any missing schema tables.
+

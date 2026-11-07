@@ -41,3 +41,4 @@ Pipeline One implements defense-in-depth across the application lifecycle. Secur
 ### 2.7 Application Rate Limiting & HTTP Security Headers
 - **Threat:** Denial-of-service brute force and clickjacking attacks.
 - **Controls:** Express rate limiting limits requests to 1,000 requests per 15-minute window (`rateLimiter.js`). Helmet injects `X-Frame-Options`, `X-XSS-Protection`, and `X-Content-Type-Options: nosniff`.
+
