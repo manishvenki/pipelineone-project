@@ -538,10 +538,10 @@ export const ProjectDetailPage = () => {
                       )}
 
                       <Link
-                        to="/dashboard/deployments"
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+                        to={`/dashboard/pipelines/${exec.id}`}
+                        className="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors border border-blue-500/30"
                       >
-                        Console <ArrowRight className="w-3 h-3" />
+                        Visualizer <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
                   </div>

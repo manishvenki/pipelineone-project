@@ -18,6 +18,9 @@ import jenkinsRoutes from './routes/jenkinsRoutes.js';
 import vercelRoutes from './routes/vercelRoutes.js';
 import pipelineRoutes from './routes/pipelineRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
+import monitoringRoutes from './routes/monitoringRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 
@@ -83,6 +86,11 @@ app.use('/api/vercel', vercelRoutes);
 // Phase 3 Orchestration & Webhooks routes
 app.use('/api/pipelines', pipelineRoutes);
 app.use('/api/webhooks', webhookRoutes);
+
+// Phase 4 Real-Time Monitoring, Analytics & Notifications
+app.use('/api', monitoringRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Root route
 app.get('/', (req, res) => {

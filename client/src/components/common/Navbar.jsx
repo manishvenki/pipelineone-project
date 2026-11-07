@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Layers, Github, LogOut, Settings, User, Menu, X, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Badge from './Badge';
+import NotificationBell from '../notifications/NotificationBell';
 
 export const Navbar = ({ onToggleSidebar, isMobileMenuOpen }) => {
   const { user, logout } = useAuth();
@@ -58,6 +59,9 @@ export const Navbar = ({ onToggleSidebar, isMobileMenuOpen }) => {
             <span className="text-slate-400 hover:text-white">Connect GitHub</span>
           )}
         </Link>
+
+        {/* Notifications Bell */}
+        <NotificationBell />
 
         {/* User profile dropdown */}
         <div className="relative">

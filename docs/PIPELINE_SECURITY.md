@@ -35,3 +35,4 @@ Pipeline One implements defense-in-depth security principles across integration 
 ### 7. Process Execution Isolation & Timeouts
 - Subprocess execution (`runCommandInDirectory`) operates with a strict 30-second timeout guard to prevent runaway processes from hanging server resources.
 - Node commands inspect directories for `package.json` before invoking `npm` to prevent directory traversal escapes.
+

@@ -62,3 +62,4 @@ GitHub retries unacknowledged webhooks. To prevent duplicate pipeline runs:
 5. **Which events would you like to trigger this webhook?** Select **"Just the push event"**.
 6. Ensure **"Active"** is checked and click **"Add webhook"**.
 7. GitHub will send a test ping, which Pipeline One validates instantly.
+

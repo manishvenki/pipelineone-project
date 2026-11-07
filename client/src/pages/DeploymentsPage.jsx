@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Rocket,
   Play,
@@ -481,6 +482,14 @@ export const DeploymentsPage = () => {
                         </button>
                       )}
 
+                      <Link
+                        to={`/dashboard/pipelines/${exec.id}`}
+                        title="Open 10-Stage Visualizer"
+                        className="px-2 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors font-medium"
+                      >
+                        Visualizer
+                      </Link>
+
                       <button
                         onClick={() => selectExecution(exec)}
                         className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
@@ -511,12 +520,21 @@ export const DeploymentsPage = () => {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveExecution(null)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/dashboard/pipelines/${activeExecution.id}`}
+                  className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium flex items-center gap-1 transition-colors shadow-sm"
+                >
+                  <span>10-Stage Visualizer</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+                <button
+                  onClick={() => setActiveExecution(null)}
+                  className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Stage Progression Bar */}

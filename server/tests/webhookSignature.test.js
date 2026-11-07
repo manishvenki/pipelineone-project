@@ -39,3 +39,4 @@ test('Webhook Signature - Rejects malformed or missing headers', () => {
   assert.equal(verifyWebhookSignature(payload, 'md5=invalid', secret), false);
   assert.equal(verifyWebhookSignature(payload, 'sha256=', secret), false);
 });
+

@@ -31,6 +31,8 @@ const fallbackStore = {
   pipeline_executions: new Map(),
   pipeline_events: new Map(),
   github_webhook_events: new Map(),
+  pipeline_stage_events: new Map(),
+  notifications: new Map(),
 };
 
 /**
@@ -211,6 +213,26 @@ const executeFallbackQuery = async (text, params) => {
         items = items.filter((e) => e.user_id === params[0] && e.provider === params[1]);
       } else if (lower.includes('where user_id = $1')) {
         items = items.filter((e) => e.user_id === params[0]);
+      }
+      items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from pipeline_stage_events')) {
+      let items = Array.from(fallbackStore.pipeline_stage_events.values()).map(e => ({ ...e }));
+      if (lower.includes('where execution_id = $1')) {
+        items = items.filter((e) => e.execution_id === params[0]);
+      }
+      items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from notifications')) {
+      let items = Array.from(fallbackStore.notifications.values()).map(n => ({ ...n }));
+      if (lower.includes('where user_id = $1 and is_read = false')) {
+        items = items.filter((n) => n.user_id === params[0] && !n.is_read);
+      } else if (lower.includes('where user_id = $1')) {
+        items = items.filter((n) => n.user_id === params[0]);
       }
       items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       return { rows: items, rowCount: items.length };
@@ -422,6 +444,43 @@ const executeFallbackQuery = async (text, params) => {
     return { rows: [record], rowCount: 1 };
   }
 
+  if (lower.startsWith('insert into pipeline_stage_events')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const event = {
+      id,
+      execution_id: params[0],
+      stage_name: params[1],
+      stage_status: params[2] || 'waiting',
+      started_at: params[3] || now,
+      completed_at: params[4] || null,
+      duration_ms: params[5] || 0,
+      error_message: params[6] || null,
+      details: params[7] || {},
+      created_at: now,
+    };
+    fallbackStore.pipeline_stage_events.set(id, event);
+    return { rows: [{ ...event }], rowCount: 1 };
+  }
+
+  if (lower.startsWith('insert into notifications')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const notification = {
+      id,
+      user_id: params[0],
+      execution_id: params[1] || null,
+      type: params[2],
+      title: params[3],
+      message: params[4],
+      is_read: false,
+      metadata: params[5] || {},
+      created_at: now,
+    };
+    fallbackStore.notifications.set(id, notification);
+    return { rows: [{ ...notification }], rowCount: 1 };
+  }
+
   // 3. DELETE queries
   if (lower.startsWith('delete from connected_integrations')) {
     let deleted = 0;
@@ -485,6 +544,40 @@ const executeFallbackQuery = async (text, params) => {
       }
     }
     return { rows: updated ? [updated] : [], rowCount: updated ? 1 : 0 };
+  }
+
+  if (lower.startsWith('update notifications')) {
+    let updatedRows = [];
+    if (lower.includes('set is_read = true where user_id = $1')) {
+      for (const [id, n] of fallbackStore.notifications.entries()) {
+        if (n.user_id === params[0]) {
+          n.is_read = true;
+          updatedRows.push({ ...n });
+        }
+      }
+    } else if (lower.includes('where id = $1 and user_id = $2')) {
+      const n = fallbackStore.notifications.get(params[0]);
+      if (n && n.user_id === params[1]) {
+        n.is_read = true;
+        updatedRows.push({ ...n });
+      }
+    }
+    return { rows: updatedRows, rowCount: updatedRows.length };
+  }
+
+  if (lower.startsWith('update pipeline_stage_events')) {
+    let updatedRows = [];
+    // e.g. update status, completed_at, duration_ms
+    const eventId = params[params.length - 1];
+    const event = fallbackStore.pipeline_stage_events.get(eventId);
+    if (event) {
+      if (lower.includes('stage_status = $1')) event.stage_status = params[0];
+      if (lower.includes('completed_at = $2')) event.completed_at = params[1];
+      if (lower.includes('duration_ms = $3')) event.duration_ms = params[2];
+      if (lower.includes('error_message = $4')) event.error_message = params[3];
+      updatedRows.push({ ...event });
+    }
+    return { rows: updatedRows, rowCount: updatedRows.length };
   }
 
   return { rows: [], rowCount: 0 };

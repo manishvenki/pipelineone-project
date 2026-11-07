@@ -54,3 +54,4 @@ test('Jenkinsfile Generator - React + Vite Static Project', () => {
   assert.ok(jfile.includes("dockerdev/my-vite-app:v1.0.0"));
   assert.ok(jfile.includes("withCredentials")); // Masked credentials
 });
+

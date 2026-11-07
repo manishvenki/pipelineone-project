@@ -164,3 +164,4 @@ ${docker_publish_enabled && docker_repository ? `
 export default {
   generateJenkinsfile,
 };
+

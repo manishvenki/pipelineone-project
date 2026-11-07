@@ -103,3 +103,4 @@ Event stream types:
   Sets status to `cancelled`, terminates running processes, and aborts any active Jenkins build via Jenkins API. The orchestrator checks cancellation flags before each stage transition to prevent state overwrites.
 - **Traceable Retries (`POST /api/pipelines/executions/:id/retry`):**
   Creates a new execution record with `trigger_source = 'retry'`, copying the commit context, branch, and configuration from the original run. Both runs remain fully audited in PostgreSQL.
+

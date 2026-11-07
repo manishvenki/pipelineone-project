@@ -93,3 +93,4 @@ CREATE TABLE IF NOT EXISTS github_webhook_events (
 
 CREATE INDEX IF NOT EXISTS idx_webhook_delivery_id ON github_webhook_events(delivery_id);
 CREATE INDEX IF NOT EXISTS idx_webhook_project ON github_webhook_events(project_id);
+

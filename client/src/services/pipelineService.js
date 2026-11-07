@@ -62,6 +62,9 @@ export const cancelPipelineExecution = async (executionId) => {
   return res.data;
 };
 
+export const cancelPipeline = cancelPipelineExecution;
+export const retryPipeline = retryPipelineExecution;
+
 /**
  * Creates an EventSource instance for real-time SSE execution logs and status.
  * Accepts a callback for received events and automatically handles cleanup.
@@ -127,3 +130,4 @@ export default {
   cancelPipelineExecution,
   createExecutionEventSource,
 };
+

@@ -138,3 +138,4 @@ export const StageProgressionBar = ({ status, currentStage = null, executionEven
 };
 
 export default StageProgressionBar;
+

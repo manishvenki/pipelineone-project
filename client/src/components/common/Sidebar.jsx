@@ -7,6 +7,7 @@ import {
   Container,
   Rocket,
   Activity,
+  BarChart3,
   Settings,
   Database,
   ExternalLink,
@@ -28,12 +29,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
     { label: 'My Projects', to: '/dashboard/projects', icon: FolderGit2 },
     { label: 'Integrations', to: '/dashboard/integrations', icon: Boxes },
     { label: 'Docker Builds', to: '/dashboard/builds', icon: Container },
-    {
-      label: 'Deployments',
-      to: '/dashboard/deployments',
-      icon: Rocket,
-      badge: 'Soon',
-    },
+    { label: 'Deployments', to: '/dashboard/deployments', icon: Rocket },
+    { label: 'Analytics', to: '/dashboard/analytics', icon: BarChart3 },
     { label: 'Activity', to: '/dashboard/activity', icon: Activity },
     { label: 'Settings', to: '/dashboard/settings', icon: Settings },
   ];
@@ -109,8 +106,8 @@ export const Sidebar = ({ isOpen, onClose }) => {
           </div>
 
           <div className="text-[11px] text-slate-600 px-1 flex items-center justify-between">
-            <span>Pipeline One v1.0.0</span>
-            <span className="text-emerald-500 font-mono">Phase 1/5</span>
+            <span>Pipeline One v4.0.0</span>
+            <span className="text-emerald-500 font-mono">Phase 4 Active</span>
           </div>
         </div>
       </aside>

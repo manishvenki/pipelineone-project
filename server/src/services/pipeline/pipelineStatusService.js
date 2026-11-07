@@ -85,9 +85,22 @@ export const handleExecutionStream = async (req, res, executionId) => {
   req.on('close', cleanup);
 };
 
+/**
+ * Subscribe to execution events via callback function (returns unsubscribe function)
+ */
+export const subscribeExecutionEvents = (executionId, callback) => {
+  const channel = `event:${executionId}`;
+  pipelineEmitter.on(channel, callback);
+  return () => {
+    pipelineEmitter.removeListener(channel, callback);
+  };
+};
+
 export default {
   pipelineEmitter,
   recordEvent,
   getExecutionEvents,
   handleExecutionStream,
+  subscribeExecutionEvents,
 };
+

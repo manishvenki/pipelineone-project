@@ -57,3 +57,4 @@ When a project is created, `pipelineConfigService.js` automatically populates de
 - `GET /api/pipelines/config/:projectId`: Retrieve project pipeline configuration.
 - `POST /api/pipelines/config/:projectId`: Upsert custom configuration.
 - `DELETE /api/pipelines/config/:projectId`: Reset configuration back to framework defaults.
+

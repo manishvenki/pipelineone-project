@@ -78,3 +78,4 @@ POST /job/<jobName>/<buildNumber>/stop
 - All Jenkins passwords are rejected; **only Personal Access Tokens (API tokens) are accepted**.
 - Stored credentials are encrypted using **AES-256-GCM** in PostgreSQL.
 - All Jenkins server URLs pass through SSRF validation to block loopbacks and AWS/cloud metadata services (`169.254.169.254`).
+

@@ -67,3 +67,5 @@ export const useNotification = () => {
   return context;
 };
 
+export const useNotifications = useNotification;
+
