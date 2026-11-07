@@ -62,3 +62,4 @@ test('Notifications Service - Marks individual and all notifications as read', a
   const finalUnread = await notificationService.getUnreadCount(testUserId);
   assert.equal(finalUnread, 0);
 });
+

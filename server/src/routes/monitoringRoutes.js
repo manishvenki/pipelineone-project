@@ -27,3 +27,4 @@ router.get('/monitoring/pipelines/:id/logs', getPipelineLogs);
 router.get('/monitoring/pipelines/:id/stream', streamPipelineEvents);
 
 export default router;
+

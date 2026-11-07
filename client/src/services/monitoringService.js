@@ -43,7 +43,7 @@ export const getPipelineLogs = async (executionId) => {
  * Automatically handles auth token, connection status, event parsing, and cleanup.
  */
 export const createPipelineMonitoringStream = (executionId, onMessage, onError, onConnectionChange) => {
-  const token = localStorage.getItem('pipeline_token') || localStorage.getItem('token');
+  const token = localStorage.getItem('token');
   const url = `/api/monitoring/pipelines/${executionId}/stream${token ? `?token=${token}` : ''}`;
   const eventSource = new EventSource(url);
 
@@ -82,3 +82,4 @@ export default {
   getPipelineLogs,
   createPipelineMonitoringStream,
 };
+

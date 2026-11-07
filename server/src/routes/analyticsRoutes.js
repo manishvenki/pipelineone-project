@@ -17,3 +17,4 @@ router.get('/build-performance', getBuildPerformance);
 router.get('/project-activity', getProjectActivity);
 
 export default router;
+

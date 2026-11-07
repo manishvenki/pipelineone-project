@@ -113,3 +113,4 @@ export default {
   markAllAsRead,
   getUnreadCount,
 };
+

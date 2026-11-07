@@ -71,3 +71,4 @@ export default {
   markAsRead,
   markAllAsRead,
 };
+

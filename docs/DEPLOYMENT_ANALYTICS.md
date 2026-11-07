@@ -85,3 +85,4 @@ ORDER BY date ASC;
 | `/api/analytics/deployments` | `GET` | `dateRange=30d` | Daily time-series breakdown of executions |
 | `/api/analytics/build-performance` | `GET` | `dateRange=30d` | Average, minimum, and maximum build runtimes |
 | `/api/analytics/project-activity` | `GET` | `dateRange=30d` | Project-wise volume and reliability breakdown |
+

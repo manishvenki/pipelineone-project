@@ -50,8 +50,8 @@ app.use(
       return callback(null, true); // Dev convenience
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-GitHub-Delivery', 'X-Hub-Signature-256', 'X-GitHub-Event'],
   })
 );
 

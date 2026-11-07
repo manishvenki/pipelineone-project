@@ -43,3 +43,4 @@ All notification endpoints require JWT application authentication (`requireAuth`
 - The `NotificationBell` component checks `/api/notifications/unread-count` every 15 seconds.
 - Opening the dropdown fetches the latest 15 notifications.
 - Clicking any notification marks it read immediately and navigates to `/dashboard/pipelines/:execution_id`.
+

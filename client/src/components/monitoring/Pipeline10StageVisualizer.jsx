@@ -289,3 +289,4 @@ export const Pipeline10StageVisualizer = ({ stages = [], onSelectStage, selected
 };
 
 export default Pipeline10StageVisualizer;
+

@@ -21,6 +21,8 @@ server/uploads/*
 !server/uploads/.gitkeep
 server/storage/*
 !server/storage/.gitkeep
+backups/
+server/backups/
 
 # Logs
 logs

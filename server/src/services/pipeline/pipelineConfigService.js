@@ -82,20 +82,18 @@ export const saveConfiguration = async (projectId, userId, configData) => {
     throw new Error('Project not found or unauthorized');
   }
 
-  const {
-    github_branch = 'main',
-    build_command = '',
-    install_command = '',
-    output_directory = '.',
-    node_version = '20',
-    docker_enabled = false,
-    docker_publish_enabled = false,
-    docker_repository = '',
-    docker_tag = 'latest',
-    vercel_project_id = '',
-    deployment_environment = 'production',
-    auto_deploy_enabled = true,
-  } = configData;
+  const github_branch = configData.github_branch || configData.githubBranch || configData.branch || 'main';
+  const build_command = configData.build_command !== undefined ? configData.build_command : (configData.buildCommand || '');
+  const install_command = configData.install_command !== undefined ? configData.install_command : (configData.installCommand || '');
+  const output_directory = configData.output_directory || configData.outputDirectory || '.';
+  const node_version = configData.node_version || configData.nodeVersion || '20';
+  const docker_enabled = configData.docker_enabled !== undefined ? configData.docker_enabled : Boolean(configData.dockerEnabled);
+  const docker_publish_enabled = configData.docker_publish_enabled !== undefined ? configData.docker_publish_enabled : Boolean(configData.dockerPublishEnabled);
+  const docker_repository = configData.docker_repository || configData.dockerRepository || '';
+  const docker_tag = configData.docker_tag || configData.dockerTag || 'latest';
+  const vercel_project_id = configData.vercel_project_id || configData.vercelProjectId || '';
+  const deployment_environment = configData.deployment_environment || configData.deploymentEnvironment || 'production';
+  const auto_deploy_enabled = configData.auto_deploy_enabled !== undefined ? configData.auto_deploy_enabled : (configData.autoDeployEnabled ?? true);
 
   // Retrieve existing secret or generate new one
   const existingRes = await db.query(

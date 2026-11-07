@@ -41,3 +41,4 @@ test('Secret Redaction - Preserves normal build output and logs', () => {
   const clean = sanitizeLogText(normalLog);
   assert.equal(clean, normalLog);
 });
+

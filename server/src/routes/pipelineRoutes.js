@@ -6,11 +6,17 @@ const router = Router();
 router.use(requireAuth);
 
 // Configuration routes
+router.get('/config/:projectId', pipelineController.getConfiguration);
+router.post('/config/:projectId', pipelineController.saveConfiguration);
+router.post('/config', pipelineController.saveConfiguration);
+router.delete('/config/:projectId', pipelineController.deleteConfiguration);
+
 router.get('/configurations/project/:projectId', pipelineController.getConfiguration);
 router.post('/configurations', pipelineController.saveConfiguration);
 router.delete('/configurations/project/:projectId', pipelineController.deleteConfiguration);
 
 // Execution triggers & history
+router.post('/trigger', pipelineController.triggerRun);
 router.post('/:projectId/run', pipelineController.triggerRun);
 router.get('/executions', pipelineController.listExecutions);
 router.get('/executions/:id', pipelineController.getExecution);

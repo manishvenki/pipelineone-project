@@ -7,8 +7,10 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test tests/security.test.js tests/projectDetection.test.js tests/zipService.test.js tests/api.test.js tests/ssrfValidator.test.js tests/dockerfileGenerator.test.js tests/phase2Integrations.test.js tests/jenkinsfileGenerator.test.js tests/webhookSignature.test.js tests/phase3Orchestration.test.js tests/secretRedaction.test.js tests/analytics.test.js tests/notifications.test.js tests/phase4Monitoring.test.js",
-    "migrate": "node src/database/migrate.js"
+    "test": "node --test tests/security.test.js tests/projectDetection.test.js tests/zipService.test.js tests/api.test.js tests/ssrfValidator.test.js tests/dockerfileGenerator.test.js tests/phase2Integrations.test.js tests/jenkinsfileGenerator.test.js tests/webhookSignature.test.js tests/phase3Orchestration.test.js tests/secretRedaction.test.js tests/analytics.test.js tests/notifications.test.js tests/phase4Monitoring.test.js tests/multiUserIsolation.test.js tests/e2eLifecycle.test.js",
+    "migrate": "node src/database/migrate.js",
+    "db:backup": "node src/database/backupRestore.js backup",
+    "db:restore": "node src/database/backupRestore.js restore"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",

@@ -36,3 +36,4 @@ The terminal viewer component provides developer tooling:
 - **Auto-scroll Stick:** Keeps the terminal scrolled to the latest line as output streams in.
 - **Clipboard Export:** One-click copy with formatted timestamps and tags.
 - **File Download:** Exports raw `.txt` log file for offline archiving and audit compliance.
+

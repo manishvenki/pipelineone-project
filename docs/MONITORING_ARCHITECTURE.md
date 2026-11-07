@@ -100,3 +100,4 @@ All stage transitions, log entries, and durations are persisted directly to Post
 ## 4. Scalability & Graceful Degradation
 - **Polling Fallback:** In environments where SSE connections cannot be maintained, components safely fall back to periodic interval polling.
 - **In-Memory Pub/Sub:** Uses Node.js `EventEmitter` with listener cleanup on SSE disconnect (`req.on('close')`), eliminating memory leaks.
+

@@ -16,7 +16,10 @@ export const getConfiguration = async (req, res, next) => {
 
 export const saveConfiguration = async (req, res, next) => {
   try {
-    const { projectId, ...configData } = req.body;
+    const projectId = req.params.projectId || req.body.projectId;
+    const configData = { ...req.body };
+    delete configData.projectId;
+
     if (!projectId) {
       return res.status(400).json({ success: false, error: 'projectId is required' });
     }
@@ -39,14 +42,29 @@ export const deleteConfiguration = async (req, res, next) => {
 
 export const triggerRun = async (req, res, next) => {
   try {
-    const { projectId } = req.params;
-    const { branch, triggerSource = 'manual' } = req.body || {};
+    const projectId = req.params.projectId || req.body?.projectId;
+    const {
+      branch,
+      triggerSource = 'manual',
+      environment,
+      commitSha,
+      commitMessage,
+      commitAuthor,
+    } = req.body || {};
+
+    if (!projectId) {
+      return res.status(400).json({ success: false, error: 'projectId is required' });
+    }
 
     const execution = await pipelineTriggerService.triggerPipelineRun({
       projectId,
       userId: req.userId,
       branch,
       triggerSource,
+      environment,
+      commitSha,
+      commitMessage,
+      commitAuthor,
     });
 
     res.status(201).json({
