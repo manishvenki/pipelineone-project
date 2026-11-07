@@ -156,25 +156,25 @@ export const PipelineConfigModal = ({
     >
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-          <p className="text-xs text-slate-400">Loading pipeline settings...</p>
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-xs text-slate-500">Loading pipeline settings...</p>
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-2.5 text-xs text-rose-400">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-xs text-red-700">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Project Framework Header */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
             <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <Sparkles className="w-4 h-4 text-emerald-600" />
               <div>
-                <p className="text-xs font-semibold text-white">Detected Framework</p>
-                <p className="text-[11px] text-slate-400 capitalize">
+                <p className="text-xs font-semibold text-slate-900">Detected Framework</p>
+                <p className="text-[11px] text-slate-500 capitalize">
                   {project?.framework?.replace('_', ' ') || 'Pure Static HTML'}
                 </p>
               </div>
@@ -182,7 +182,7 @@ export const PipelineConfigModal = ({
             <button
               type="button"
               onClick={handleResetDefaults}
-              className="px-2.5 py-1 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg flex items-center gap-1.5 transition-colors"
+              className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg flex items-center gap-1.5 transition-colors border border-slate-200 font-medium"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset Defaults
             </button>
@@ -190,12 +190,12 @@ export const PipelineConfigModal = ({
 
           {/* 1. Branch & Trigger Settings */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <GitBranch className="w-4 h-4 text-blue-400" /> Source & Triggers
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <GitBranch className="w-4 h-4 text-blue-600" /> Source & Triggers
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Target Branch
                 </label>
                 <input
@@ -203,7 +203,7 @@ export const PipelineConfigModal = ({
                   value={form.branch}
                   onChange={(e) => setForm({ ...form, branch: e.target.value })}
                   placeholder="main"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                   required
                 />
               </div>
@@ -214,9 +214,9 @@ export const PipelineConfigModal = ({
                     type="checkbox"
                     checked={form.auto_deploy_on_push}
                     onChange={(e) => setForm({ ...form, auto_deploy_on_push: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+                    className="w-4 h-4 rounded text-blue-600 accent-blue-600"
                   />
-                  <span className="text-xs text-slate-300">
+                  <span className="text-xs text-slate-700 font-medium">
                     Auto-deploy on GitHub push
                   </span>
                 </label>
@@ -225,13 +225,13 @@ export const PipelineConfigModal = ({
           </div>
 
           {/* 2. Build Commands & Artifact Output */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-purple-400" /> Build Specification
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-blue-600" /> Build Specification
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Build Command
                 </label>
                 <input
@@ -239,12 +239,12 @@ export const PipelineConfigModal = ({
                   value={form.build_command}
                   onChange={(e) => setForm({ ...form, build_command: e.target.value })}
                   placeholder="npm run build (blank for Pure HTML)"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Install Command
                 </label>
                 <input
@@ -252,12 +252,12 @@ export const PipelineConfigModal = ({
                   value={form.install_command}
                   onChange={(e) => setForm({ ...form, install_command: e.target.value })}
                   placeholder="npm install (blank for Pure HTML)"
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Output Directory
                 </label>
                 <input
@@ -265,19 +265,19 @@ export const PipelineConfigModal = ({
                   value={form.output_directory}
                   onChange={(e) => setForm({ ...form, output_directory: e.target.value })}
                   placeholder="dist, build, or ."
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Node.js Version
                 </label>
                 <select
                   value={form.node_version}
                   onChange={(e) => setForm({ ...form, node_version: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="18">Node 18 LTS</option>
                   <option value="20">Node 20 LTS</option>
@@ -288,9 +288,9 @@ export const PipelineConfigModal = ({
           </div>
 
           {/* 3. Vercel Destination */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <Rocket className="w-4 h-4 text-emerald-400" /> Deployment Destination (Vercel)
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Rocket className="w-4 h-4 text-emerald-600" /> Deployment Destination (Vercel)
             </h4>
             <div className="space-y-3">
               <label className="relative flex items-center gap-2.5 cursor-pointer">
@@ -298,16 +298,16 @@ export const PipelineConfigModal = ({
                   type="checkbox"
                   checked={form.deploy_to_vercel}
                   onChange={(e) => setForm({ ...form, deploy_to_vercel: e.target.checked })}
-                  className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+                  className="w-4 h-4 rounded text-blue-600 accent-blue-600"
                 />
-                <span className="text-xs text-slate-300">
+                <span className="text-xs text-slate-700 font-medium">
                   Deploy build output directly to Vercel Edge Network
                 </span>
               </label>
 
               {form.deploy_to_vercel && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Vercel Project Name (Optional)
                   </label>
                   <input
@@ -315,7 +315,7 @@ export const PipelineConfigModal = ({
                     value={form.vercel_project_name}
                     onChange={(e) => setForm({ ...form, vercel_project_name: e.target.value })}
                     placeholder={`Defaults to ${project?.slug || project?.name?.toLowerCase().replace(/[^a-z0-9-_]/g, '-') || 'project'}`}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
               )}
@@ -323,9 +323,9 @@ export const PipelineConfigModal = ({
           </div>
 
           {/* 4. Optional Docker Containerization */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <Container className="w-4 h-4 text-cyan-400" /> Optional Docker Containerization
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Container className="w-4 h-4 text-blue-600" /> Optional Docker Containerization
             </h4>
             <div className="space-y-3">
               <label className="relative flex items-center gap-2.5 cursor-pointer">
@@ -333,17 +333,17 @@ export const PipelineConfigModal = ({
                   type="checkbox"
                   checked={form.build_docker_image}
                   onChange={(e) => setForm({ ...form, build_docker_image: e.target.checked })}
-                  className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+                  className="w-4 h-4 rounded text-blue-600 accent-blue-600"
                 />
-                <span className="text-xs text-slate-300">
+                <span className="text-xs text-slate-700 font-medium">
                   Build Docker image during pipeline execution
                 </span>
               </label>
 
               {form.build_docker_image && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Image Name
                     </label>
                     <input
@@ -351,12 +351,12 @@ export const PipelineConfigModal = ({
                       value={form.docker_image_name}
                       onChange={(e) => setForm({ ...form, docker_image_name: e.target.value })}
                       placeholder="e.g. my-app"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Image Tag
                     </label>
                     <input
@@ -364,7 +364,7 @@ export const PipelineConfigModal = ({
                       value={form.docker_image_tag}
                       onChange={(e) => setForm({ ...form, docker_image_tag: e.target.value })}
                       placeholder="latest"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                     />
                   </div>
 
@@ -374,9 +374,9 @@ export const PipelineConfigModal = ({
                         type="checkbox"
                         checked={form.push_to_dockerhub}
                         onChange={(e) => setForm({ ...form, push_to_dockerhub: e.target.checked })}
-                        className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+                        className="w-4 h-4 rounded text-blue-600 accent-blue-600"
                       />
-                      <span className="text-xs text-slate-300">
+                      <span className="text-xs text-slate-700">
                         Push built image to connected Docker Hub registry
                       </span>
                     </label>
@@ -387,12 +387,12 @@ export const PipelineConfigModal = ({
           </div>
 
           {/* 5. Jenkins Job Identifier */}
-          <div className="space-y-3 pt-2 border-t border-slate-800/80">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <Layers className="w-4 h-4 text-indigo-400" /> Jenkins CI Job
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-amber-600" /> Jenkins CI Job
             </h4>
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Jenkins Job Name
               </label>
               <input
@@ -400,30 +400,30 @@ export const PipelineConfigModal = ({
                 value={form.jenkins_job_name}
                 onChange={(e) => setForm({ ...form, jenkins_job_name: e.target.value })}
                 placeholder={`pipeline-one-${project?.slug || 'project'}`}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
               />
             </div>
           </div>
 
           {/* 6. Webhook Secret */}
           {form.webhook_secret && (
-            <div className="space-y-2 pt-2 border-t border-slate-800/80">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <Key className="w-4 h-4 text-amber-400" /> GitHub Webhook Secret
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Key className="w-4 h-4 text-blue-600" /> GitHub Webhook Secret
               </h4>
               <div className="flex items-center gap-2">
                 <input
                   type="password"
                   readOnly
                   value={form.webhook_secret}
-                  className="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-400 font-mono select-all"
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono select-all"
                 />
                 <button
                   type="button"
                   onClick={handleCopySecret}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-slate-200 font-medium"
                 >
-                  {copiedSecret ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedSecret ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   {copiedSecret ? 'Copied' : 'Copy'}
                 </button>
               </div>
@@ -431,19 +431,19 @@ export const PipelineConfigModal = ({
           )}
 
           {/* Modal Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-all"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               {saving ? 'Saving...' : 'Save Configuration'}
@@ -456,4 +456,3 @@ export const PipelineConfigModal = ({
 };
 
 export default PipelineConfigModal;
-

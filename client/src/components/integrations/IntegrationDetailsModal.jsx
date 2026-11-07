@@ -82,14 +82,14 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={getProviderTitle()} maxWidth="max-w-2xl">
       <div className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-          <span className="text-xs text-slate-400">
-            Account / Host: <strong className="text-white font-mono">{accountName || 'Active'}</strong>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+          <span className="text-xs text-slate-500">
+            Account / Host: <strong className="text-slate-900 font-mono">{accountName || 'Active'}</strong>
           </span>
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition"
+            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 transition font-medium"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -97,21 +97,21 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl flex items-start gap-2 text-xs text-rose-300">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-xs text-red-700">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+          <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-500">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
             <span className="text-xs">Querying {provider} API...</span>
           </div>
         ) : (
           <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
             {data.length === 0 ? (
-              <div className="py-10 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-slate-800">
+              <div className="py-10 text-center text-slate-500 text-xs bg-slate-50 rounded-xl border border-slate-200">
                 No items or resources returned from {provider} API.
               </div>
             ) : (
@@ -120,21 +120,21 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
                   return (
                     <div
                       key={item.name || idx}
-                      className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <Container className="w-4 h-4 text-blue-400" />
-                          <span className="font-semibold text-white font-mono">{item.name}</span>
-                          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                          <Container className="w-4 h-4 text-blue-600" />
+                          <span className="font-semibold text-slate-900 font-mono">{item.name}</span>
+                          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
                             {item.is_private ? 'Private' : 'Public'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 line-clamp-1">{item.description || 'No description'}</p>
+                        <p className="text-[11px] text-slate-500 line-clamp-1">{item.description || 'No description'}</p>
                       </div>
-                      <div className="text-right text-[11px] text-slate-400 font-mono">
+                      <div className="text-right text-[11px] text-slate-500 font-mono">
                         <div>{item.pull_count || 0} pulls</div>
-                        <div className="text-slate-500">{item.star_count || 0} stars</div>
+                        <div className="text-slate-400">{item.star_count || 0} stars</div>
                       </div>
                     </div>
                   );
@@ -144,34 +144,28 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
                   return (
                     <div
                       key={item.name || idx}
-                      className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
                     >
                       <div className="flex items-center gap-2.5">
-                        <Server className="w-4 h-4 text-amber-400" />
+                        <Server className="w-4 h-4 text-amber-600" />
                         <div>
-                          <span className="font-semibold text-white">{item.name}</span>
-                          <div className="text-[11px] text-slate-400 font-mono">
+                          <span className="font-semibold text-slate-900">{item.name}</span>
+                          <div className="text-[11px] text-slate-500 font-mono">
                             Type: {item._class ? item._class.split('.').pop() : 'Job'}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
-                          item.color?.includes('blue') || item.color === 'anime'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                            : item.color?.includes('red')
-                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}>
-                          {item.color || 'idle'}
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                          {item.color || 'blue'}
                         </span>
                         {item.url && (
                           <a
                             href={item.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1 text-slate-400 hover:text-white"
+                            className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
@@ -185,68 +179,77 @@ export const IntegrationDetailsModal = ({ isOpen, onClose, provider, accountName
                   return (
                     <div
                       key={item.id || item.name || idx}
-                      className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Triangle className="w-3.5 h-3.5 fill-white text-white" />
-                        <div>
-                          <span className="font-semibold text-white">{item.name}</span>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            Framework: {item.framework || 'other'}
-                          </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Triangle className="w-3.5 h-3.5 fill-slate-800 text-slate-800" />
+                          <span className="font-semibold text-slate-900 font-mono">{item.name}</span>
+                          {item.framework && (
+                            <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono">
+                              {item.framework}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                          {item.link?.repo && (
+                            <span className="flex items-center gap-1">
+                              <Github className="w-3 h-3 text-slate-500" /> {item.link.repo}
+                            </span>
+                          )}
+                          <span>Updated {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'recently'}</span>
                         </div>
                       </div>
 
-                      <div className="text-right text-[11px] text-slate-400">
-                        {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : ''}
+                      <div className="flex items-center gap-2">
+                        {item.targets?.production?.url && (
+                          <a
+                            href={`https://${item.targets.production.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-[11px] font-medium flex items-center gap-1"
+                          >
+                            <Globe className="w-3 h-3" /> Visit
+                          </a>
+                        )}
                       </div>
                     </div>
                   );
                 }
 
-                // GitHub Repositories
-                return (
-                  <div
-                    key={item.id || item.full_name || idx}
-                    className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <FolderGit2 className="w-4 h-4 text-purple-400" />
-                      <div>
-                        <span className="font-semibold text-white">{item.name}</span>
-                        <div className="text-[11px] text-slate-400 font-mono">{item.default_branch || 'main'}</div>
+                if (provider === 'github') {
+                  return (
+                    <div
+                      key={item.id || idx}
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Github className="w-4 h-4 text-slate-800" />
+                          <span className="font-semibold text-slate-900">{item.name}</span>
+                          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-mono">
+                            {item.isPrivate ? 'Private' : 'Public'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-1">{item.description || 'No description'}</p>
+                      </div>
+
+                      <div className="text-right text-[11px] text-slate-500 font-mono">
+                        <div>Branch: {item.defaultBranch || 'main'}</div>
+                        <div className="text-slate-400">{item.language || 'Static'}</div>
                       </div>
                     </div>
-                    {item.html_url && (
-                      <a
-                        href={item.html_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 text-slate-400 hover:text-white"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                );
+                  );
+                }
+
+                return null;
               })
             )}
           </div>
         )}
-
-        <div className="flex justify-end pt-3 border-t border-slate-800">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white transition"
-          >
-            Close
-          </button>
-        </div>
       </div>
     </Modal>
   );
 };
 
 export default IntegrationDetailsModal;
-

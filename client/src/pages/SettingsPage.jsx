@@ -23,7 +23,7 @@ export const SettingsPage = () => {
   const { user, updateSettings } = useAuth();
   const notify = useNotification();
 
-  const [theme, setTheme] = useState(user?.settings?.theme || 'dark');
+  const [theme, setTheme] = useState(user?.settings?.theme || 'arctic');
   const [notifications, setNotifications] = useState(user?.settings?.notifications_enabled ?? true);
   const [autoDeploy, setAutoDeploy] = useState(user?.settings?.auto_deploy_enabled ?? false);
   const [saving, setSaving] = useState(false);
@@ -75,55 +75,55 @@ export const SettingsPage = () => {
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Platform Settings</h1>
-        <p className="text-xs text-slate-400 mt-1">
+      <div className="pb-2 border-b border-slate-200">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Platform Settings</h1>
+        <p className="text-xs text-slate-500 mt-1">
           Configure application preferences, notification options, and inspect database infrastructure health.
         </p>
       </div>
 
       {/* Account Profile Card */}
-      <div className="p-6 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-          <User className="w-4 h-4 text-blue-400" /> Account Profile
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/80 space-y-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+          <User className="w-4 h-4 text-blue-600" /> Account Profile
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
             <span className="text-slate-500 block mb-0.5">Full Name:</span>
-            <span className="font-semibold text-white">{user?.name}</span>
+            <span className="font-semibold text-slate-900">{user?.name}</span>
           </div>
 
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
             <span className="text-slate-500 block mb-0.5">Email Address:</span>
-            <span className="font-semibold text-white">{user?.email}</span>
+            <span className="font-semibold text-slate-900">{user?.email}</span>
           </div>
 
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
             <span className="text-slate-500 block mb-0.5">Account ID:</span>
-            <span className="font-mono text-slate-300">{user?.id}</span>
+            <span className="font-mono text-slate-700">{user?.id}</span>
           </div>
 
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
             <span className="text-slate-500 block mb-0.5">Account Created:</span>
-            <span className="text-slate-300">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</span>
+            <span className="text-slate-700">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</span>
           </div>
         </div>
       </div>
 
       {/* Preferences Form */}
-      <form onSubmit={handleSaveSettings} className="p-6 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-6 shadow-xl">
-        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-          <SettingsIcon className="w-4 h-4 text-purple-400" /> Platform Preferences
+      <form onSubmit={handleSaveSettings} className="p-6 bg-white rounded-2xl border border-slate-200/80 space-y-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+          <SettingsIcon className="w-4 h-4 text-blue-600" /> Platform Preferences
         </h2>
 
         {/* Theme */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-300 block">Dashboard Theme</label>
-          <div className="flex gap-3">
+          <label className="text-xs font-medium text-slate-700 block">Dashboard Theme</label>
+          <div className="flex flex-wrap gap-3">
             {[
-              { id: 'dark', label: 'Dark Charcoal (Default)', icon: Moon },
-              { id: 'light', label: 'Light', icon: Sun, disabled: true },
+              { id: 'arctic', label: 'Arctic Professional (Active)', icon: Sun },
+              { id: 'dark', label: 'Dark Charcoal', icon: Moon, disabled: true },
               { id: 'system', label: 'System', icon: Laptop, disabled: true },
             ].map((t) => {
               const Icon = t.icon;
@@ -135,15 +135,15 @@ export const SettingsPage = () => {
                   onClick={() => setTheme(t.id)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
                     theme === t.id
-                      ? 'bg-blue-600/20 border-blue-500 text-blue-400 shadow-md'
+                      ? 'bg-blue-50 border-blue-300 text-blue-700 shadow-xs'
                       : t.disabled
-                      ? 'bg-slate-950/40 border-slate-800 text-slate-600 cursor-not-allowed'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-white border-slate-200 text-slate-700 hover:text-slate-900'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
                   {t.label}
-                  {t.disabled && <span className="text-[10px] text-slate-600">(Soon)</span>}
+                  {t.disabled && <span className="text-[10px] text-slate-400">(Legacy)</span>}
                 </button>
               );
             })}
@@ -151,11 +151,11 @@ export const SettingsPage = () => {
         </div>
 
         {/* Toggles */}
-        <div className="space-y-4 pt-2 border-t border-slate-800">
+        <div className="space-y-4 pt-2 border-t border-slate-100">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-xs font-medium text-white block">Email & In-App Notifications</span>
-              <span className="text-[11px] text-slate-400">Receive alerts when new builds complete or repositories sync.</span>
+              <span className="text-xs font-medium text-slate-900 block">Email & In-App Notifications</span>
+              <span className="text-[11px] text-slate-500">Receive alerts when new builds complete or repositories sync.</span>
             </div>
             <input
               type="checkbox"
@@ -167,8 +167,8 @@ export const SettingsPage = () => {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-xs font-medium text-white block">Automatic Deployment on Git Push</span>
-              <span className="text-[11px] text-slate-400">Trigger continuous delivery pipeline when new commits are detected.</span>
+              <span className="text-xs font-medium text-slate-900 block">Automatic Deployment on Git Push</span>
+              <span className="text-[11px] text-slate-500">Trigger continuous delivery pipeline when new commits are detected.</span>
             </div>
             <input
               type="checkbox"
@@ -183,7 +183,7 @@ export const SettingsPage = () => {
           <button
             type="submit"
             disabled={saving}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -197,15 +197,15 @@ export const SettingsPage = () => {
       </form>
 
       {/* Database & Infrastructure Health */}
-      <div className="p-6 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+      <div className="p-6 bg-white rounded-2xl border border-slate-200/80 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Database className="w-4 h-4 text-emerald-400" /> Database & System Health
+          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+            <Database className="w-4 h-4 text-emerald-600" /> Database & System Health
           </h2>
           <button
             onClick={loadHealth}
             disabled={healthLoading}
-            className="text-xs text-blue-400 hover:underline flex items-center gap-1"
+            className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium"
           >
             Refresh Health
           </button>
@@ -216,9 +216,9 @@ export const SettingsPage = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
             {/* PostgreSQL status */}
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <div className="flex items-center justify-between font-sans">
-                <span className="font-semibold text-white">PostgreSQL (Primary DB)</span>
+                <span className="font-semibold text-slate-900">PostgreSQL (Primary DB)</span>
                 <Badge
                   variant={pgStatus?.status === 'connected' ? 'success' : 'primary'}
                   size="xs"
@@ -226,19 +226,19 @@ export const SettingsPage = () => {
                   {pgStatus?.status === 'connected' ? 'Connected' : 'Resilient Mode'}
                 </Badge>
               </div>
-              <div className="text-[11px] text-slate-400 space-y-1 pt-1 font-mono">
+              <div className="text-[11px] text-slate-600 space-y-1 pt-1 font-mono">
                 <div>Engine: {pgStatus?.engine}</div>
                 <div>Operational Mode: {pgStatus?.mode}</div>
                 {pgStatus?.error && (
-                  <div className="text-amber-400/90 text-[10px]">Notice: {pgStatus.error}</div>
+                  <div className="text-amber-800 text-[10px]">Notice: {pgStatus.error}</div>
                 )}
               </div>
             </div>
 
             {/* MongoDB Atlas status */}
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 space-y-2">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <div className="flex items-center justify-between font-sans">
-                <span className="font-semibold text-white">MongoDB Atlas (Secondary DB)</span>
+                <span className="font-semibold text-slate-900">MongoDB Atlas (Secondary DB)</span>
                 <Badge
                   variant={mongoStatus?.isConnected ? 'success' : 'default'}
                   size="xs"
@@ -246,7 +246,7 @@ export const SettingsPage = () => {
                   {mongoStatus?.status}
                 </Badge>
               </div>
-              <div className="text-[11px] text-slate-400 space-y-1 pt-1 font-mono">
+              <div className="text-[11px] text-slate-600 space-y-1 pt-1 font-mono">
                 <div>Configured: {mongoStatus?.configured ? 'Yes' : 'Not configured'}</div>
                 <div>Status: {mongoStatus?.status}</div>
                 <div className="text-[10px] text-slate-500 font-sans">
@@ -256,11 +256,11 @@ export const SettingsPage = () => {
             </div>
 
             {/* Server runtime info */}
-            <div className="p-4 bg-slate-900 rounded-xl border border-slate-800 sm:col-span-2 space-y-1 text-slate-400 text-[11px]">
-              <div>API Server: <span className="text-white">{systemHealth?.service}</span></div>
-              <div>Node Version: <span className="text-white">{systemHealth?.system?.nodeVersion}</span></div>
-              <div>Process Memory: <span className="text-white">{systemHealth?.system?.memoryUsageMb} MB</span></div>
-              <div>Server Uptime: <span className="text-white">{systemHealth?.uptimeSeconds} seconds</span></div>
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 sm:col-span-2 space-y-1 text-slate-600 text-[11px]">
+              <div>API Server: <span className="text-slate-900 font-semibold">{systemHealth?.service}</span></div>
+              <div>Node Version: <span className="text-slate-900 font-semibold">{systemHealth?.system?.nodeVersion}</span></div>
+              <div>Process Memory: <span className="text-slate-900 font-semibold">{systemHealth?.system?.memoryUsageMb} MB</span></div>
+              <div>Server Uptime: <span className="text-slate-900 font-semibold">{systemHealth?.uptimeSeconds} seconds</span></div>
             </div>
           </div>
         )}
@@ -270,4 +270,3 @@ export const SettingsPage = () => {
 };
 
 export default SettingsPage;
-

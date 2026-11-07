@@ -126,15 +126,15 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
       {selectedRepo ? (
         /* Step 2: Detailed inspection & branch selection */
         <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-slate-900/60 rounded-xl border border-slate-800">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
             <div className="flex items-center gap-3">
               <img
                 src={selectedRepo.owner.avatarUrl}
                 alt={selectedRepo.owner.login}
-                className="w-10 h-10 rounded-full border border-slate-700"
+                className="w-10 h-10 rounded-full border border-slate-300"
               />
               <div>
-                <h4 className="text-base font-semibold text-white flex items-center gap-2">
+                <h4 className="text-base font-semibold text-slate-900 flex items-center gap-2">
                   {selectedRepo.fullName}
                   {selectedRepo.isPrivate ? (
                     <Badge variant="warning" size="xs">
@@ -146,47 +146,47 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
                     </Badge>
                   )}
                 </h4>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {selectedRepo.description || 'No description provided'}
                 </p>
               </div>
             </div>
             <button
               onClick={() => setSelectedRepo(null)}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
             >
               Choose different repo
             </button>
           </div>
 
           {detailsLoading ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-400" />
+            <div className="py-12 flex flex-col items-center justify-center gap-3 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
               <p className="text-sm">Analyzing repository structure & static configuration...</p>
             </div>
           ) : (
             <div className="space-y-4">
               {/* Static Detection Result */}
               {repoDetails?.analysis && (
-                <div className="p-4 bg-blue-950/20 border border-blue-500/30 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
-                    <Sparkles className="w-4 h-4 text-blue-400" />
+                <div className="p-4 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
                     Detected Project Architecture
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs pt-1">
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-400 block mb-0.5">Project Type:</span>
-                      <span className="font-semibold text-white">{repoDetails.analysis.detectedType}</span>
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
+                      <span className="text-slate-500 block mb-0.5">Project Type:</span>
+                      <span className="font-semibold text-slate-900">{repoDetails.analysis.detectedType}</span>
                     </div>
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-400 block mb-0.5">Build Command:</span>
-                      <span className="font-mono text-emerald-400">
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
+                      <span className="text-slate-500 block mb-0.5">Build Command:</span>
+                      <span className="font-mono text-emerald-700 font-medium">
                         {repoDetails.analysis.buildCommand || 'None required'}
                       </span>
                     </div>
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-400 block mb-0.5">Output Directory:</span>
-                      <span className="font-mono text-slate-200">{repoDetails.analysis.outputDirectory}</span>
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs">
+                      <span className="text-slate-500 block mb-0.5">Output Directory:</span>
+                      <span className="font-mono text-slate-700">{repoDetails.analysis.outputDirectory}</span>
                     </div>
                   </div>
                 </div>
@@ -194,13 +194,13 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
 
               {/* Branch Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                  <GitBranch className="w-3.5 h-3.5 text-blue-400" /> Deployment Branch
+                <label className="text-xs font-medium text-slate-700 flex items-center gap-1.5">
+                  <GitBranch className="w-3.5 h-3.5 text-blue-600" /> Deployment Branch
                 </label>
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 >
                   {(repoDetails?.branches || [{ name: selectedRepo.defaultBranch || 'main' }]).map((b) => (
                     <option key={b.name} value={b.name}>
@@ -212,29 +212,29 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
 
               {/* Latest Commit Preview */}
               {repoDetails?.latestCommit && (
-                <div className="p-3 bg-slate-900/40 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
                   <span className="truncate max-w-md">
-                    Latest commit: <span className="text-slate-200">"{repoDetails.latestCommit.message}"</span>
+                    Latest commit: <span className="text-slate-900 font-medium">"{repoDetails.latestCommit.message}"</span>
                   </span>
-                  <span className="font-mono text-[11px] bg-slate-800 px-2 py-0.5 rounded text-blue-400 shrink-0">
+                  <span className="font-mono text-[11px] bg-slate-200 px-2 py-0.5 rounded text-blue-700 shrink-0 font-medium">
                     {repoDetails.latestCommit.sha?.slice(0, 7)}
                   </span>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setSelectedRepo(null)}
-                  className="px-4 py-2 text-sm text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  className="px-4 py-2 text-xs text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
                 >
                   Back
                 </button>
                 <button
                   onClick={handleConfirmImport}
                   disabled={submitting}
-                  className="px-5 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-md flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -258,24 +258,24 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
           {/* Search and filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search repositories by name or description..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
-            <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 self-start">
+            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start">
               {['all', 'public', 'private'].map((v) => (
                 <button
                   key={v}
                   onClick={() => setVisibility(v)}
                   className={`px-3 py-1 text-xs font-medium rounded-lg capitalize transition-all ${
                     visibility === v
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {v}
@@ -285,22 +285,22 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl text-rose-200 text-sm flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {/* List */}
           {loading ? (
-            <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-              <p className="text-sm">Fetching your GitHub repositories...</p>
+            <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <p className="text-xs">Fetching your GitHub repositories...</p>
             </div>
           ) : filteredRepos.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 space-y-2">
-              <Github className="w-10 h-10 mx-auto text-slate-600" />
-              <p className="text-sm font-medium">No matching repositories found</p>
+            <div className="py-12 text-center text-slate-500 space-y-2">
+              <Github className="w-10 h-10 mx-auto text-slate-400" />
+              <p className="text-sm font-medium text-slate-700">No matching repositories found</p>
               <p className="text-xs text-slate-500">
                 Ensure your repository is accessible to the authorized GitHub account.
               </p>
@@ -311,11 +311,11 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
                 <div
                   key={repo.id}
                   onClick={() => handleSelectRepo(repo)}
-                  className="p-3.5 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 hover:border-blue-500/40 rounded-xl cursor-pointer transition-all flex items-center justify-between group"
+                  className="p-3.5 bg-slate-50 hover:bg-blue-50/50 border border-slate-200/80 hover:border-blue-300 rounded-xl cursor-pointer transition-all flex items-center justify-between group shadow-xs"
                 >
                   <div className="space-y-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-white group-hover:text-blue-400 transition-colors truncate">
+                      <span className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                         {repo.name}
                       </span>
                       {repo.isPrivate ? (
@@ -334,26 +334,26 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
                       )}
                     </div>
                     {repo.description && (
-                      <p className="text-xs text-slate-400 truncate max-w-xl">
+                      <p className="text-xs text-slate-500 truncate max-w-xl">
                         {repo.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-4 text-[11px] text-slate-400">
                       <span className="flex items-center gap-1">
-                        <GitBranch className="w-3 h-3" /> {repo.defaultBranch}
+                        <GitBranch className="w-3 h-3 text-slate-400" /> {repo.defaultBranch}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" /> Updated{' '}
+                        <Calendar className="w-3 h-3 text-slate-400" /> Updated{' '}
                         {new Date(repo.updatedAt).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-slate-400 group-hover:text-blue-400 transition-colors">
+                    <span className="text-xs text-slate-500 group-hover:text-blue-600 transition-colors font-medium">
                       Select
                     </span>
-                    <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
                   </div>
                 </div>
               ))}
@@ -366,4 +366,3 @@ export const RepoSelectorModal = ({ isOpen, onClose, onProjectCreated }) => {
 };
 
 export default RepoSelectorModal;
-

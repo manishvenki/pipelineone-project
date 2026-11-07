@@ -135,11 +135,11 @@ export const DockerBuildModal = ({
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Docker Engine status banner */}
         {dockerEngineStatus && !dockerEngineStatus.available && (
-          <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-200">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-amber-300">Docker Daemon Offline</p>
-              <p className="text-[11px] text-amber-200/80 mt-0.5">
+              <p className="font-semibold text-amber-900">Docker Daemon Offline</p>
+              <p className="text-[11px] text-amber-800 mt-0.5">
                 {dockerEngineStatus.error || 'Docker engine is not currently running. Please launch Docker Desktop or the Linux engine on your host.'}
               </p>
             </div>
@@ -147,20 +147,20 @@ export const DockerBuildModal = ({
         )}
 
         {error && (
-          <div className="p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-xs text-rose-200">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Project Selector */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-300">Target Project</label>
+          <label className="text-xs font-medium text-slate-700">Target Project</label>
           <select
             value={selectedProjectId}
             onChange={handleProjectChange}
             disabled={loading || !!initialProjectId}
-            className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-70"
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 disabled:opacity-70"
           >
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
@@ -172,24 +172,24 @@ export const DockerBuildModal = ({
 
         {/* Selected Project Specs Card */}
         {selectedProject && (
-          <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 text-xs">
+          <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Framework Type:</span>
-              <span className="font-mono text-blue-400 font-semibold uppercase">
+              <span className="text-slate-500">Framework Type:</span>
+              <span className="font-mono text-blue-600 font-semibold uppercase">
                 {selectedProject.detected_framework || selectedProject.project_type || 'pure_html'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Target Runtime:</span>
-              <span className="font-mono text-slate-200">
+              <span className="text-slate-500">Target Runtime:</span>
+              <span className="font-mono text-slate-800">
                 {selectedProject.project_type === 'react_vite'
                   ? 'Multi-stage (node:20-alpine builder + nginx:alpine-slim)'
                   : 'nginx:alpine-slim (production optimized)'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Exposed Port:</span>
-              <span className="font-mono text-emerald-400">80/TCP</span>
+              <span className="text-slate-500">Exposed Port:</span>
+              <span className="font-mono text-emerald-700 font-medium">80/TCP</span>
             </div>
           </div>
         )}
@@ -197,38 +197,38 @@ export const DockerBuildModal = ({
         {/* Image naming */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2 space-y-1">
-            <label className="text-xs font-medium text-slate-300">Image Name</label>
+            <label className="text-xs font-medium text-slate-700">Image Name</label>
             <div className="relative">
-              <Container className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Container className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={imageName}
                 onChange={(e) => setImageName(e.target.value)}
                 placeholder="my-static-site"
                 required
-                className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-300">Tag</label>
+            <label className="text-xs font-medium text-slate-700">Tag</label>
             <div className="relative">
-              <Tag className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+              <Tag className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={imageTag}
                 onChange={(e) => setImageTag(e.target.value)}
                 placeholder="latest"
                 required
-                className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
               />
             </div>
           </div>
         </div>
 
         {/* Push to Docker Hub Option */}
-        <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -240,11 +240,11 @@ export const DockerBuildModal = ({
                 }
               }}
               disabled={!dockerHubUsername}
-              className="w-4 h-4 rounded border-slate-700 text-blue-600 focus:ring-blue-500"
+              className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"
             />
             <div className="text-xs">
-              <span className="font-semibold text-white">Publish image to Docker Hub</span>
-              <p className="text-slate-400">
+              <span className="font-semibold text-slate-900">Publish image to Docker Hub</span>
+              <p className="text-slate-500">
                 {dockerHubUsername
                   ? `Authenticated as ${dockerHubUsername}. Automatically push upon build completion.`
                   : 'Docker Hub is not connected. Connect Docker Hub in Integrations to enable registry publishing.'}
@@ -254,15 +254,15 @@ export const DockerBuildModal = ({
 
           {pushToDockerHub && dockerHubUsername && (
             <div className="space-y-1 pt-1">
-              <label className="text-xs font-medium text-slate-300">Destination Repository</label>
+              <label className="text-xs font-medium text-slate-700">Destination Repository</label>
               <div className="relative">
-                <UploadCloud className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                <UploadCloud className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
                   value={destinationRepo}
                   onChange={(e) => setDestinationRepo(e.target.value)}
                   placeholder={`${dockerHubUsername}/${imageName || 'app'}`}
-                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
                 />
               </div>
             </div>
@@ -270,18 +270,18 @@ export const DockerBuildModal = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-slate-300 hover:text-white transition"
+            className="px-4 py-2 text-xs text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition shadow-lg shadow-blue-900/30 disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs transition shadow-sm disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -302,4 +302,3 @@ export const DockerBuildModal = ({
 };
 
 export default DockerBuildModal;
-

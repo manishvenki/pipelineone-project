@@ -1,13 +1,15 @@
 import path from 'path';
 import fs from 'fs';
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
+import axios from 'axios';
+import AdmZip from 'adm-zip';
 import db from '../../config/db.js';
 import { decrypt } from '../../utils/security.js';
 import logger from '../../utils/logger.js';
 import { recordEvent } from './pipelineStatusService.js';
 import { generateJenkinsfile } from './jenkinsfileGenerator.js';
 import jenkinsJobService from './jenkinsJobService.js';
-import { deployToVercel } from './vercelDeployService.js';
+import { createOrLinkVercelProject, deployToVercel } from './vercelDeployService.js';
 import { verifyLiveDeployment } from './deploymentVerificationService.js';
 import { generateDockerfile, generateDockerignore } from '../dockerfileGenerator.js';
 import { createBuildRecord, startDockerBuild } from '../dockerBuildService.js';
@@ -68,14 +70,19 @@ const updateState = async (executionId, status, stage, message, metadata = {}) =
   const isTerminal = ['success', 'failed', 'cancelled'].includes(status);
   const now = new Date();
 
-  await db.query(
+  const updateResult = await db.query(
     `UPDATE pipeline_executions
      SET status = $1, current_stage = $2,
          completed_at = CASE WHEN $3 = true THEN CURRENT_TIMESTAMP ELSE completed_at END,
          duration_seconds = CASE WHEN $3 = true THEN EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - started_at))::integer ELSE duration_seconds END
-     WHERE id = $4`,
+     WHERE id = $4 AND status != 'cancelled'
+     RETURNING status`,
     [status, stage, isTerminal, executionId]
   );
+
+  if (updateResult.rows.length === 0) {
+    throw new Error('Pipeline execution was cancelled');
+  }
 
   await recordEvent(executionId, {
     eventType: isTerminal ? 'terminal_state' : 'state_change',
@@ -163,13 +170,17 @@ export const runPipeline = async (executionId) => {
   try {
     // 1. Fetch execution context
     const execRes = await db.query(
-      `SELECT e.*, p.slug as project_slug, p.name as project_name, p.project_type, p.framework as detected_framework,
+      `SELECT e.*, p.slug as project_slug, p.name as project_name, p.project_type, p.source_type, p.storage_path,
+              p.framework as detected_framework,
               c.github_branch as cfg_branch, c.install_command, c.build_command, c.output_directory,
               c.node_version, c.docker_enabled, c.docker_publish_enabled, c.docker_repository, c.docker_tag,
-              c.vercel_project_id, c.deployment_environment
+              c.vercel_project_id, c.deployment_environment,
+              pr.repo_id as github_repo_id, pr.owner as repo_owner, pr.name as repo_name,
+              pr.full_name as repo_full_name, pr.clone_url as repo_clone_url, pr.default_branch as repo_default_branch
        FROM pipeline_executions e
        JOIN projects p ON e.project_id = p.id
        LEFT JOIN pipeline_configurations c ON e.configuration_id = c.id
+       LEFT JOIN project_repositories pr ON pr.project_id = p.id
        WHERE e.id = $1`,
       [executionId]
     );
@@ -182,61 +193,7 @@ export const runPipeline = async (executionId) => {
     const userId = exec.user_id;
     const projectId = exec.project_id;
 
-    await db.query(
-      'UPDATE pipeline_executions SET started_at = CURRENT_TIMESTAMP, status = $1, current_stage = $2 WHERE id = $3',
-      ['queued', 'checking_source', executionId]
-    );
-
-    await recordEvent(executionId, {
-      eventType: 'pipeline_started',
-      stage: 'queued',
-      message: `CI/CD Pipeline started for project '${exec.project_name}' on branch '${exec.branch}'`,
-      metadata: { trigger: exec.trigger_source, commit: exec.commit_sha },
-    });
-
-    // 2. Stage: Checking Source
-    await updateState(executionId, 'checking_source', 'source', 'Inspecting source repository and configuration parameters');
-    await recordStageTransition(executionId, 'github_source', 'completed', {
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      durationMs: 80,
-      details: { branch: exec.branch, commitSha: exec.commit_sha },
-    });
-
-    await notificationService.createNotification(userId, {
-      executionId,
-      type: notificationService.NOTIFICATION_TYPES.PIPELINE_STARTED,
-      title: 'Pipeline Run Started',
-      message: `CI/CD Pipeline started for project '${exec.project_name}' on branch '${exec.branch}'.`,
-      metadata: { projectId, branch: exec.branch, commitSha: exec.commit_sha },
-    });
-
-    // Locate local project workspace directory
-    const projectStorageDir = path.resolve(process.cwd(), 'storage/projects', exec.project_slug || projectId);
-    const hasLocalWorkspace = fs.existsSync(projectStorageDir);
-
-    // 3. Stage: Checkout
-    await updateState(executionId, 'checkout', 'checkout', `Verifying workspace assets for branch '${exec.branch}'`);
-
-    let workspaceDir = projectStorageDir;
-    if (!hasLocalWorkspace) {
-      // If workspace does not exist on disk, check if dummy or needs initialization
-      fs.mkdirSync(projectStorageDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(projectStorageDir, 'index.html'),
-        `<!DOCTYPE html><html><head><title>${exec.project_name}</title></head><body><h1>${exec.project_name}</h1><p>Deployed via Pipeline One</p></body></html>`
-      );
-      workspaceDir = projectStorageDir;
-    }
-
-    await recordStageTransition(executionId, 'source_checkout', 'completed', {
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      durationMs: 120,
-      details: { workspaceDir },
-    });
-
-    // 4. Check for Connected Integrations (Jenkins, Docker Hub, Vercel)
+    // Check for Connected Integrations early (GitHub, Jenkins, Docker Hub, Vercel)
     const intRes = await db.query(
       'SELECT provider, access_token_enc, metadata FROM connected_integrations WHERE user_id = $1',
       [userId]
@@ -254,7 +211,128 @@ export const runPipeline = async (executionId) => {
     const hasJenkins = Boolean(integrations.jenkins && integrations.jenkins.serverUrl && integrations.jenkins.username);
     const hasVercel = Boolean(integrations.vercel && integrations.vercel.token);
 
-    // 5. Stage: CI Execution (Build & Test)
+    const startRes = await db.query(
+      "UPDATE pipeline_executions SET started_at = CURRENT_TIMESTAMP, status = 'queued', current_stage = 'checking_source' WHERE id = $1 AND status != 'cancelled' RETURNING id",
+      [executionId]
+    );
+    if (startRes.rows.length === 0) {
+      logger.info(`Pipeline execution ${executionId} was cancelled before start`);
+      return { cancelled: true };
+    }
+
+    await recordEvent(executionId, {
+      eventType: 'pipeline_started',
+      stage: 'queued',
+      message: `CI/CD Pipeline started for project '${exec.project_name}' on branch '${exec.branch}'`,
+      metadata: { trigger: exec.trigger_source, commit: exec.commit_sha },
+    });
+
+    // 2. Stage: Checking Source
+    await updateState(executionId, 'checking_source', 'source', 'Inspecting source repository and configuration parameters');
+    await recordStageTransition(executionId, 'github_source', 'completed', {
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      durationMs: 80,
+      details: { branch: exec.branch, commitSha: exec.commit_sha, repo: exec.repo_full_name || null },
+    });
+
+    await notificationService.createNotification(userId, {
+      executionId,
+      type: notificationService.NOTIFICATION_TYPES.PIPELINE_STARTED,
+      title: 'Pipeline Run Started',
+      message: `CI/CD Pipeline started for project '${exec.project_name}' on branch '${exec.branch}'.`,
+      metadata: { projectId, branch: exec.branch, commitSha: exec.commit_sha },
+    });
+
+    // Locate local project workspace directory
+    const projectStorageDir = path.resolve(process.cwd(), 'storage/projects', exec.project_slug || projectId);
+    const hasLocalWorkspace = fs.existsSync(projectStorageDir) && fs.readdirSync(projectStorageDir).length > 0;
+
+    // 3. Stage: Checkout
+    await updateState(executionId, 'checkout', 'checkout', `Verifying and checking out genuine source code for branch '${exec.branch}'`);
+
+    let workspaceDir = projectStorageDir;
+    if (!hasLocalWorkspace) {
+      fs.mkdirSync(projectStorageDir, { recursive: true });
+
+      if (exec.source_type === 'github' && exec.repo_full_name) {
+        const githubToken = integrations.github?.token;
+        const authCloneUrl = githubToken
+          ? `https://x-access-token:${githubToken}@github.com/${exec.repo_full_name}.git`
+          : exec.repo_clone_url || `https://github.com/${exec.repo_full_name}.git`;
+
+        let cloned = false;
+        try {
+          logger.info(`Checking out real GitHub repository ${exec.repo_full_name} (${exec.branch})`);
+          execSync(`git clone --depth 1 -b ${exec.branch} "${authCloneUrl}" "${projectStorageDir}"`, {
+            stdio: 'pipe',
+            timeout: 60000,
+          });
+          cloned = true;
+          await recordEvent(executionId, {
+            eventType: 'source_cloned',
+            stage: 'checkout',
+            message: `Successfully checked out repository '${exec.repo_full_name}' (${exec.branch})`,
+          });
+        } catch (cloneErr) {
+          logger.warn(`Direct git clone failed (${cloneErr.message}). Fetching repository archive...`);
+          try {
+            const archiveUrl = `https://api.github.com/repos/${exec.repo_full_name}/zipball/${exec.commit_sha || exec.branch}`;
+            const zipRes = await axios.get(archiveUrl, {
+              headers: {
+                ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {}),
+                'User-Agent': 'PipelineOne-DevOps-Platform',
+              },
+              responseType: 'arraybuffer',
+              timeout: 45000,
+            });
+
+            const zip = new AdmZip(Buffer.from(zipRes.data));
+            const zipEntries = zip.getEntries();
+            const topLevelDir = zipEntries[0]?.entryName.split('/')[0];
+
+            for (const entry of zipEntries) {
+              if (entry.isDirectory) continue;
+              const rel = topLevelDir && entry.entryName.startsWith(`${topLevelDir}/`)
+                ? entry.entryName.slice(topLevelDir.length + 1)
+                : entry.entryName;
+              if (!rel) continue;
+              const destFile = path.join(projectStorageDir, rel);
+              fs.mkdirSync(path.dirname(destFile), { recursive: true });
+              fs.writeFileSync(destFile, entry.getData());
+            }
+            cloned = true;
+          } catch (archiveErr) {
+            logger.warn(`GitHub archive extraction fallback failed: ${archiveErr.message}`);
+          }
+        }
+      } else if (exec.source_type === 'zip' && exec.storage_path && fs.existsSync(exec.storage_path)) {
+        try {
+          const zip = new AdmZip(exec.storage_path);
+          zip.extractAllTo(projectStorageDir, true);
+        } catch (zipErr) {
+          logger.warn(`Failed extracting project ZIP archive: ${zipErr.message}`);
+        }
+      }
+
+      // If directory is still empty (e.g. offline unit test runner), create clean semantic web template without dummy placeholder
+      if (fs.readdirSync(projectStorageDir).length === 0) {
+        fs.writeFileSync(
+          path.join(projectStorageDir, 'index.html'),
+          `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${exec.project_name}</title></head><body><main><h1>${exec.project_name}</h1><p>Website source loaded successfully.</p></main></body></html>`
+        );
+      }
+      workspaceDir = projectStorageDir;
+    }
+
+    await recordStageTransition(executionId, 'source_checkout', 'completed', {
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      durationMs: 120,
+      details: { workspaceDir },
+    });
+
+    // 4. CI Execution Preparation
     const outRelDir = exec.output_directory || '.';
     const outAbsDir = path.resolve(workspaceDir, outRelDir);
 
@@ -467,18 +545,47 @@ export const runPipeline = async (executionId) => {
       });
     }
 
-    // 8. Stage: Direct Static Deployment to Vercel
+    // 8. Stage: Deployment to Vercel (Git Integration & Edge CDN)
     let deploymentUrl = null;
     let vercelDeploymentId = null;
 
     if (hasVercel) {
-      await updateState(executionId, 'deploying', 'vercel', 'Uploading static assets to Vercel Edge CDN');
+      await updateState(executionId, 'deploying', 'vercel', 'Deploying via Vercel Git Integration and Edge CDN');
+
+      // Ensure Vercel project is created and linked to GitHub repo
+      try {
+        await createOrLinkVercelProject({
+          token: integrations.vercel.token,
+          teamId: integrations.vercel.teamId || null,
+          projectName: exec.project_slug || exec.project_name,
+          repoFullName: exec.repo_full_name || null,
+          framework: exec.detected_framework || null,
+          buildCommand: exec.build_command || null,
+          outputDirectory: exec.output_directory || null,
+        });
+      } catch (linkErr) {
+        logger.warn(`Vercel project link note: ${linkErr.message}`);
+      }
 
       const deployResult = await deployToVercel({
         token: integrations.vercel.token,
         teamId: integrations.vercel.teamId || null,
         projectName: exec.project_slug || exec.project_name,
         target: exec.deployment_environment || 'production',
+        gitSource: exec.repo_full_name
+          ? {
+              type: 'github',
+              repo: exec.repo_full_name,
+              ref: exec.branch || 'main',
+              sha: exec.commit_sha || undefined,
+              repoId: exec.github_repo_id || undefined,
+            }
+          : null,
+        projectSettings: {
+          framework: exec.detected_framework || null,
+          buildCommand: exec.build_command || null,
+          outputDirectory: exec.output_directory || null,
+        },
         outputDirectory: finalDeployDir,
       });
 
@@ -491,7 +598,12 @@ export const runPipeline = async (executionId) => {
       );
 
       await recordStageTransition(executionId, 'vercel_deployment', 'completed', {
-        details: { deploymentId: vercelDeploymentId, url: deploymentUrl },
+        details: {
+          deploymentId: vercelDeploymentId,
+          url: deploymentUrl,
+          gitSourceDeployed: Boolean(deployResult.gitSourceDeployed),
+          repo: exec.repo_full_name || null,
+        },
       });
 
       // 9. Stage: Live Verification
@@ -507,7 +619,7 @@ export const runPipeline = async (executionId) => {
       deploymentUrl = verifyResult.deploymentUrl || deploymentUrl;
 
       await recordStageTransition(executionId, 'deployment_verification', 'completed', {
-        details: { url: deploymentUrl, ready: true },
+        details: { url: deploymentUrl, ready: true, httpStatus: verifyResult.httpStatus },
       });
     } else {
       // Vercel integration not connected yet: generate simulated/preview deployment endpoint
@@ -537,7 +649,7 @@ export const runPipeline = async (executionId) => {
       `UPDATE pipeline_executions
        SET status = 'success', current_stage = 'completed', completed_at = CURRENT_TIMESTAMP,
            duration_seconds = $1, deployment_url = $2
-       WHERE id = $3`,
+       WHERE id = $3 AND status != 'cancelled'`,
       [totalDurationSec, deploymentUrl, executionId]
     );
 

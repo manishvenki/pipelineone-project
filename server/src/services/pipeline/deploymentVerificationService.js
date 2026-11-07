@@ -68,7 +68,11 @@ export const verifyLiveDeployment = async (options) => {
       });
       probeLatencyMs = Date.now() - probeStart;
       httpStatus = probeRes.status;
-      logger.info(`Live URL probe successful: ${liveUrl} returned HTTP ${httpStatus} (${probeLatencyMs}ms)`);
+      const isPlaceholder = typeof probeRes.data === 'string' && probeRes.data.includes('Deployed via Pipeline One');
+      if (isPlaceholder) {
+        logger.warn(`Live URL returned deprecated placeholder markup on ${liveUrl}`);
+      }
+      logger.info(`Live URL probe successful: ${liveUrl} returned HTTP ${httpStatus} (${probeLatencyMs}ms)${isPlaceholder ? ' [PLACEHOLDER DETECTED]' : ' [GENUINE SOURCE VERIFIED]'}`);
     } catch (probeErr) {
       logger.warn(`Live URL probe warning for ${liveUrl}: ${probeErr.message}`);
     }

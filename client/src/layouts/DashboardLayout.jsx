@@ -7,7 +7,7 @@ export const DashboardLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col antialiased">
       <Navbar
         onToggleSidebar={() => setMobileMenuOpen(!mobileMenuOpen)}
         isMobileMenuOpen={mobileMenuOpen}
@@ -26,4 +26,3 @@ export const DashboardLayout = () => {
 };
 
 export default DashboardLayout;
-

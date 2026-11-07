@@ -56,32 +56,32 @@ export const AnalyticsPage = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 max-w-7xl mx-auto animate-fade-in">
       {/* Header & Date Range Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shadow-sm">
               <BarChart3 className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">Deployment Analytics & Telemetry</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Deployment Analytics & Telemetry</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Real-time pipeline reliability, build performance, and project throughput trends
           </p>
         </div>
 
         {/* Date Filter & Refresh */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs">
             {['7d', '30d', '90d', 'all'].map((range) => (
               <button
                 key={range}
                 onClick={() => setDateRange(range)}
-                className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+                className={`px-3 py-1 rounded-lg font-medium transition-all ${
                   dateRange === range
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-blue-600 shadow-sm font-semibold'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {range === 'all' ? 'All Time' : range.toUpperCase()}
@@ -91,7 +91,7 @@ export const AnalyticsPage = () => {
 
           <button
             onClick={fetchAnalytics}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-sm"
             title="Refresh analytics"
           >
             <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -102,77 +102,77 @@ export const AnalyticsPage = () => {
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Runs */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">Total Executions</span>
-            <Activity className="w-4 h-4 text-blue-400" />
+            <Activity className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight">
             {summary.total_deployments || 0}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">In selected {dateRange} period</span>
+          <span className="text-[11px] text-slate-400 mt-1 block">In selected {dateRange} period</span>
         </div>
 
         {/* Success Rate */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">Success Rate</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold text-emerald-400 tracking-tight">
+          <div className="text-2xl font-bold text-emerald-600 tracking-tight">
             {summary.success_rate || 0}%
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <span className="text-[11px] text-slate-400 mt-1 block">
             {summary.successful_deployments || 0} passed • {summary.failed_deployments || 0} failed
           </span>
         </div>
 
         {/* Avg Duration */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">Avg Build Time</span>
-            <Clock className="w-4 h-4 text-purple-400" />
+            <Clock className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-white tracking-tight font-mono">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight font-mono">
             {formatSec(buildPerformance.avg_duration_ms)}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">
+          <span className="text-[11px] text-slate-400 mt-1 block">
             Min: {formatSec(buildPerformance.min_duration_ms)} • Max: {formatSec(buildPerformance.max_duration_ms)}
           </span>
         </div>
 
         {/* Active Projects */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
             <span className="text-xs font-medium">Active Projects</span>
-            <FolderGit2 className="w-4 h-4 text-sky-400" />
+            <FolderGit2 className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight">
             {projectActivity.length}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">With deployments recorded</span>
+          <span className="text-[11px] text-slate-400 mt-1 block">With deployments recorded</span>
         </div>
       </div>
 
       {/* Row 1: Daily Deployment Trends & Success Gauge */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Daily Trends Chart */}
-        <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-sm font-semibold text-white">Daily Deployment Frequency</h3>
-              <p className="text-xs text-slate-400">Volume and success distribution over time</p>
+              <h3 className="text-sm font-semibold text-slate-900">Daily Deployment Frequency</h3>
+              <p className="text-xs text-slate-500">Volume and success distribution over time</p>
             </div>
-            <span className="text-xs font-mono text-slate-500">{dailyTrends.length} data points</span>
+            <span className="text-xs font-mono text-slate-400">{dailyTrends.length} data points</span>
           </div>
           <DailyTrendBarChart trends={dailyTrends} />
         </div>
 
         {/* Success Rate Gauge */}
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-white">Pipeline Reliability</h3>
-            <p className="text-xs text-slate-400">Overall success vs failure ratio</p>
+            <h3 className="text-sm font-semibold text-slate-900">Pipeline Reliability</h3>
+            <p className="text-xs text-slate-500">Overall success vs failure ratio</p>
           </div>
           <SuccessRateGauge
             successRate={summary.success_rate || 0}
@@ -186,22 +186,22 @@ export const AnalyticsPage = () => {
       {/* Row 2: Build Performance & Project Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Build Performance */}
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="mb-4 pb-3 border-b border-slate-800">
-            <h3 className="text-sm font-semibold text-white">Build Runtime Performance</h3>
-            <p className="text-xs text-slate-400">End-to-end pipeline latency statistics</p>
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="mb-4 pb-3 border-b border-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900">Build Runtime Performance</h3>
+            <p className="text-xs text-slate-500">End-to-end pipeline latency statistics</p>
           </div>
           <BuildPerformanceCard metrics={buildPerformance} />
         </div>
 
         {/* Project Distribution */}
-        <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="text-sm font-semibold text-white">Project Deployment Volume</h3>
-              <p className="text-xs text-slate-400">Distribution across active static projects</p>
+              <h3 className="text-sm font-semibold text-slate-900">Project Deployment Volume</h3>
+              <p className="text-xs text-slate-500">Distribution across active static projects</p>
             </div>
-            <span className="text-xs text-slate-500 font-mono">{projectActivity.length} projects</span>
+            <span className="text-xs text-slate-400 font-mono">{projectActivity.length} projects</span>
           </div>
           <ProjectActivityDistribution projects={projectActivity} />
         </div>
@@ -211,4 +211,3 @@ export const AnalyticsPage = () => {
 };
 
 export default AnalyticsPage;
-

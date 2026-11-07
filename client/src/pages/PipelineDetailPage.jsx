@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
-  Play,
   RotateCw,
   Ban,
   ExternalLink,
@@ -10,10 +9,8 @@ import {
   GitCommit,
   Clock,
   Calendar,
-  Layers,
   Container,
   Rocket,
-  ShieldCheck,
   AlertCircle,
   CheckCircle2,
   XCircle,
@@ -192,34 +189,34 @@ export const PipelineDetailPage = () => {
       case 'completed':
       case 'success':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Completed
           </span>
         );
       case 'running':
       case 'in_progress':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30 animate-pulse">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> In Progress
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+            <Loader2 className="w-3.5 h-3.5 text-blue-600 animate-spin" /> In Progress
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
-            <XCircle className="w-3.5 h-3.5" /> Failed
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+            <XCircle className="w-3.5 h-3.5 text-red-600" /> Failed
           </span>
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-            <Ban className="w-3.5 h-3.5" /> Cancelled
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+            <Ban className="w-3.5 h-3.5 text-amber-600" /> Cancelled
           </span>
         );
       case 'queued':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
-            <Clock className="w-3.5 h-3.5" /> Queued
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            <Clock className="w-3.5 h-3.5 text-slate-500" /> Queued
           </span>
         );
     }
@@ -228,8 +225,8 @@ export const PipelineDetailPage = () => {
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-        <p className="text-sm text-slate-400">Loading pipeline execution details...</p>
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-sm text-slate-500">Loading pipeline execution details...</p>
       </div>
     );
   }
@@ -237,13 +234,13 @@ export const PipelineDetailPage = () => {
   if (error || !execution) {
     return (
       <div className="max-w-4xl mx-auto py-12">
-        <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-center space-y-4">
-          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-          <h2 className="text-lg font-semibold text-white">Execution Not Found</h2>
-          <p className="text-sm text-slate-400">{error || 'This pipeline execution does not exist.'}</p>
+        <div className="p-6 rounded-2xl bg-white border border-red-200 shadow-sm text-center space-y-4">
+          <AlertCircle className="w-10 h-10 text-red-600 mx-auto" />
+          <h2 className="text-lg font-semibold text-slate-900">Execution Not Found</h2>
+          <p className="text-sm text-slate-500">{error || 'This pipeline execution does not exist.'}</p>
           <Link
             to="/dashboard/deployments"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-medium hover:bg-slate-700"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Deployments
           </Link>
@@ -253,7 +250,6 @@ export const PipelineDetailPage = () => {
   }
 
   const isRunning = execution.status === 'running' || execution.status === 'in_progress';
-  const isFailed = execution.status === 'failed';
   const liveUrl = execution.live_url || execution.deployment_url;
 
   return (
@@ -263,25 +259,25 @@ export const PipelineDetailPage = () => {
         <div className="flex items-center gap-3">
           <Link
             to="/dashboard/deployments"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
             title="Back to Deployments"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h1 className="text-xl font-bold text-white tracking-tight">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
                 Execution #{execution.execution_number || execution.id?.substring(0, 8)}
               </h1>
               {getStatusBadge(execution.status)}
-              <span className="text-xs font-mono text-slate-500">ID: {execution.id}</span>
+              <span className="text-xs font-mono text-slate-400">ID: {execution.id}</span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
-              <FolderGit2 className="w-3.5 h-3.5 text-blue-400" />
+            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+              <FolderGit2 className="w-3.5 h-3.5 text-blue-600" />
               <span>Project: </span>
-              <strong className="text-slate-200">{execution.project_name || 'Static Project'}</strong>
+              <strong className="text-slate-800">{execution.project_name || 'Static Project'}</strong>
               <span>•</span>
-              <span className="text-slate-400">Trigger: {execution.trigger_type || 'manual'}</span>
+              <span className="text-slate-500">Trigger: {execution.trigger_type || 'manual'}</span>
             </p>
           </div>
         </div>
@@ -292,7 +288,7 @@ export const PipelineDetailPage = () => {
             <button
               onClick={handleCancel}
               disabled={actionLoading}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50 shadow-xs"
             >
               <Ban className="w-4 h-4" />
               <span>Cancel Run</span>
@@ -303,7 +299,7 @@ export const PipelineDetailPage = () => {
             <button
               onClick={handleRetry}
               disabled={actionLoading}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-50"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm disabled:opacity-50"
             >
               <RotateCw className={`w-4 h-4 ${actionLoading ? 'animate-spin' : ''}`} />
               <span>Retry Pipeline</span>
@@ -315,7 +311,7 @@ export const PipelineDetailPage = () => {
               href={liveUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors shadow-lg shadow-emerald-500/20"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-sm"
             >
               <ExternalLink className="w-4 h-4" />
               <span>Open Live Site</span>
@@ -325,34 +321,34 @@ export const PipelineDetailPage = () => {
       </div>
 
       {/* Commit & Execution Metadata Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-xs">
         <div>
-          <span className="text-slate-500 text-[11px] block">Branch</span>
-          <div className="font-mono text-slate-200 font-medium flex items-center gap-1.5 mt-0.5">
-            <GitBranch className="w-3.5 h-3.5 text-blue-400" />
+          <span className="text-slate-500 text-[11px] block font-medium">Branch</span>
+          <div className="font-mono text-slate-800 font-semibold flex items-center gap-1.5 mt-0.5">
+            <GitBranch className="w-3.5 h-3.5 text-blue-600" />
             {execution.branch_name || 'main'}
           </div>
         </div>
 
         <div>
-          <span className="text-slate-500 text-[11px] block">Commit</span>
-          <div className="font-mono text-slate-200 font-medium flex items-center gap-1.5 mt-0.5">
-            <GitCommit className="w-3.5 h-3.5 text-blue-400" />
+          <span className="text-slate-500 text-[11px] block font-medium">Commit</span>
+          <div className="font-mono text-slate-800 font-semibold flex items-center gap-1.5 mt-0.5">
+            <GitCommit className="w-3.5 h-3.5 text-blue-600" />
             {execution.commit_sha ? execution.commit_sha.substring(0, 7) : 'HEAD'}
           </div>
         </div>
 
         <div>
-          <span className="text-slate-500 text-[11px] block">Started At</span>
-          <div className="text-slate-200 font-medium flex items-center gap-1.5 mt-0.5">
+          <span className="text-slate-500 text-[11px] block font-medium">Started At</span>
+          <div className="text-slate-800 font-medium flex items-center gap-1.5 mt-0.5">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
             {execution.started_at ? new Date(execution.started_at).toLocaleString() : 'Just now'}
           </div>
         </div>
 
         <div>
-          <span className="text-slate-500 text-[11px] block">Duration</span>
-          <div className="text-slate-200 font-medium flex items-center gap-1.5 mt-0.5 font-mono">
+          <span className="text-slate-500 text-[11px] block font-medium">Duration</span>
+          <div className="text-slate-800 font-semibold flex items-center gap-1.5 mt-0.5 font-mono">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
             {execution.duration_ms
               ? `${Math.round(execution.duration_ms / 1000)}s`
@@ -375,66 +371,66 @@ export const PipelineDetailPage = () => {
       {/* Deployment & Container Status Artifact Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Docker Hub Artifact Card */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400">
+              <div className="p-1.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-600">
                 <Container className="w-4 h-4" />
               </div>
-              <span className="text-xs font-semibold text-white">Docker Hub Container</span>
+              <span className="text-xs font-semibold text-slate-900">Docker Hub Container</span>
             </div>
             {execution.docker_published ? (
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 Published
               </span>
             ) : execution.docker_image_tag ? (
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                 Built Locally
               </span>
             ) : (
-              <span className="text-[10px] text-slate-500">Not configured / Skipped</span>
+              <span className="text-[10px] text-slate-400 font-medium">Not configured / Skipped</span>
             )}
           </div>
 
-          <div className="text-xs text-slate-400 space-y-1 pt-1">
+          <div className="text-xs text-slate-600 space-y-1 pt-1">
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Repository Image:</span>
-              <span className="font-mono text-slate-300">
+              <span className="font-mono text-slate-800 font-medium">
                 {execution.docker_image_name || execution.docker_image_tag || 'pipelineone/static-site'}
               </span>
             </div>
             {execution.docker_image_tag && (
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">Image Tag:</span>
-                <span className="font-mono text-slate-300">{execution.docker_image_tag}</span>
+                <span className="font-mono text-slate-800 font-medium">{execution.docker_image_tag}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Vercel Deployment Artifact Card */}
-        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+              <div className="p-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-600">
                 <Rocket className="w-4 h-4" />
               </div>
-              <span className="text-xs font-semibold text-white">Vercel Production Deployment</span>
+              <span className="text-xs font-semibold text-slate-900">Vercel Production Deployment</span>
             </div>
             {liveUrl ? (
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 Live & Verified
               </span>
             ) : isRunning ? (
-              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/30 animate-pulse">
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
                 Deploying...
               </span>
             ) : (
-              <span className="text-[10px] text-slate-500">Pending</span>
+              <span className="text-[10px] text-slate-400 font-medium">Pending</span>
             )}
           </div>
 
-          <div className="text-xs text-slate-400 space-y-1 pt-1">
+          <div className="text-xs text-slate-600 space-y-1 pt-1">
             <div className="flex items-center justify-between">
               <span className="text-slate-500">Live URL:</span>
               {liveUrl ? (
@@ -442,13 +438,13 @@ export const PipelineDetailPage = () => {
                   href={liveUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-emerald-400 hover:underline flex items-center gap-1"
+                  className="font-mono text-emerald-600 hover:text-emerald-700 font-medium hover:underline flex items-center gap-1"
                 >
                   {liveUrl}
                   <ExternalLink className="w-3 h-3" />
                 </a>
               ) : (
-                <span className="text-slate-500">—</span>
+                <span className="text-slate-400">—</span>
               )}
             </div>
           </div>

@@ -17,26 +17,22 @@ import {
   RotateCcw,
   StopCircle,
   Terminal,
-  Filter,
-  Layers,
-  Container,
   Globe,
   ChevronRight,
-  X
+  X,
 } from 'lucide-react';
 import {
   listPipelineExecutions,
   getPipelineExecution,
   cancelPipelineExecution,
   retryPipelineExecution,
-  createExecutionEventSource
+  createExecutionEventSource,
 } from '../services/pipelineService';
 import { getProjects } from '../services/projectService';
 import StageProgressionBar from '../components/pipelines/StageProgressionBar';
 import PipelineConfigModal from '../components/pipelines/PipelineConfigModal';
 import TriggerPipelineModal from '../components/pipelines/TriggerPipelineModal';
 import WebhookInfoModal from '../components/pipelines/WebhookInfoModal';
-import Badge from '../components/common/Badge';
 import { useNotification } from '../context/NotificationContext';
 
 export const DeploymentsPage = () => {
@@ -57,7 +53,6 @@ export const DeploymentsPage = () => {
   // Active execution detail view
   const [activeExecution, setActiveExecution] = useState(null);
   const [activeEvents, setActiveEvents] = useState([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const logsEndRef = useRef(null);
   const eventSourceRef = useRef(null);
@@ -88,7 +83,6 @@ export const DeploymentsPage = () => {
       if (res.executions) {
         setExecutions(res.executions);
 
-        // If an active execution is open, refresh its data
         if (activeExecution) {
           const updated = res.executions.find((e) => e.id === activeExecution.id);
           if (updated) {
@@ -112,53 +106,7 @@ export const DeploymentsPage = () => {
     loadExecutions();
   }, [selectedProjectId, statusFilter]);
 
-  // Load execution details & setup SSE
-  const selectExecution = async (exec) => {
-    setActiveExecution(exec);
-    setLoadingDetail(true);
-
-    // Close any prior event source
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-
-    try {
-      const res = await getPipelineExecution(exec.id);
-      if (res.execution) {
-        setActiveExecution(res.execution);
-        setActiveEvents(res.events || []);
-      }
-
-      // If execution is in progress, connect to real-time SSE stream
-      const isTerminalState = ['success', 'failed', 'cancelled'].includes(res.execution.status);
-      if (!isTerminalState) {
-        const es = createExecutionEventSource(
-          exec.id,
-          (evt) => {
-            if (evt.eventType === 'stage_change') {
-              setActiveExecution((prev) => prev ? { ...prev, status: evt.status, current_stage: evt.stage } : prev);
-            }
-            if (evt.eventType === 'done') {
-              setActiveExecution((prev) => prev ? { ...prev, status: evt.status, live_url: evt.live_url || prev.live_url } : prev);
-              loadExecutions();
-            }
-            setActiveEvents((prev) => [...prev, evt]);
-          },
-          (err) => {
-            console.error('SSE Error:', err);
-          }
-        );
-        eventSourceRef.current = es;
-      }
-    } catch (err) {
-      notify.error('Failed to load execution details');
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
-
-  // Close SSE stream on unmount
+  // Clean up SSE stream
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -167,34 +115,67 @@ export const DeploymentsPage = () => {
     };
   }, []);
 
-  // Auto-scroll logs
+  // Auto scroll logs
   useEffect(() => {
     if (autoScroll && logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [activeEvents, autoScroll]);
 
-  // Cancel execution handler
+  // Select an execution to inspect in side drawer
+  const selectExecution = async (exec) => {
+    setActiveExecution(exec);
+    setActiveEvents([]);
+
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
+    try {
+      const full = await getPipelineExecution(exec.id);
+      if (full.execution) setActiveExecution(full.execution);
+      if (full.events) setActiveEvents(full.events);
+
+      const isTerminal = ['success', 'failed', 'cancelled'].includes(exec.status);
+      if (!isTerminal) {
+        const es = createExecutionEventSource(exec.id, (newEvent) => {
+          setActiveEvents((prev) => [...prev, newEvent]);
+
+          if (newEvent.event_type === 'state_change' && newEvent.metadata?.status) {
+            setActiveExecution((prev) => ({
+              ...prev,
+              status: newEvent.metadata.status,
+              current_stage: newEvent.stage,
+            }));
+          }
+
+          if (newEvent.event_type === 'terminal_state') {
+            loadExecutions();
+          }
+        });
+        eventSourceRef.current = es;
+      }
+    } catch (err) {
+      console.error('Failed to load execution detail', err);
+    }
+  };
+
   const handleCancel = async (id, e) => {
     if (e) e.stopPropagation();
     try {
       await cancelPipelineExecution(id);
       notify.success('Execution cancelled');
       loadExecutions();
-      if (activeExecution?.id === id) {
-        selectExecution({ ...activeExecution, status: 'cancelled' });
-      }
     } catch (err) {
       notify.error(err.response?.data?.message || err.message || 'Failed to cancel execution');
     }
   };
 
-  // Retry execution handler
   const handleRetry = async (id, e) => {
     if (e) e.stopPropagation();
     try {
       const res = await retryPipelineExecution(id);
-      notify.success('Retry triggered successfully');
+      notify.success('Execution retry triggered');
       loadExecutions();
       if (res.execution) {
         selectExecution(res.execution);
@@ -204,7 +185,6 @@ export const DeploymentsPage = () => {
     }
   };
 
-  // Open config modal for a project
   const handleOpenConfig = (projectId) => {
     const proj = projects.find((p) => p.id === projectId) || projects[0];
     if (proj) {
@@ -215,7 +195,6 @@ export const DeploymentsPage = () => {
     }
   };
 
-  // Open webhook modal for a project
   const handleOpenWebhook = (projectId) => {
     const proj = projects.find((p) => p.id === projectId) || projects[0];
     if (proj) {
@@ -226,7 +205,6 @@ export const DeploymentsPage = () => {
     }
   };
 
-  // Calculate KPIs
   const totalExecutions = executions.length;
   const successfulCount = executions.filter((e) => e.status === 'success').length;
   const runningCount = executions.filter((e) =>
@@ -238,40 +216,40 @@ export const DeploymentsPage = () => {
     switch (status) {
       case 'success':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <CheckCircle2 className="w-3 h-3" /> Success
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Success
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <XCircle className="w-3 h-3" /> Failed
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+            <XCircle className="w-3 h-3 text-red-600" /> Failed
           </span>
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <MinusCircle className="w-3 h-3" /> Cancelled
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+            <MinusCircle className="w-3 h-3 text-amber-600" /> Cancelled
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse">
-            <Loader2 className="w-3 h-3 animate-spin" /> {status.replace('_', ' ')}
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <Loader2 className="w-3 h-3 text-blue-600 animate-spin" /> {status?.replace('_', ' ')}
           </span>
         );
     }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl pb-12">
+    <div className="space-y-6 max-w-7xl pb-12">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <Rocket className="w-6 h-6 text-emerald-400" /> CI/CD Deployments Console
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+            <Rocket className="w-6 h-6 text-blue-600" /> CI/CD Deployments Console
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Automated static website delivery pipelines: Jenkins CI orchestration, Docker containerization & Vercel edge deployment.
           </p>
         </div>
@@ -279,21 +257,21 @@ export const DeploymentsPage = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={() => handleOpenConfig(selectedProjectId !== 'all' ? selectedProjectId : projects[0]?.id)}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700/60 transition-colors"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-200 transition-colors shadow-xs"
           >
-            <Settings className="w-3.5 h-3.5 text-slate-400" /> Configure Pipeline
+            <Settings className="w-3.5 h-3.5 text-slate-500" /> Configure Pipeline
           </button>
 
           <button
             onClick={() => handleOpenWebhook(selectedProjectId !== 'all' ? selectedProjectId : projects[0]?.id)}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700/60 transition-colors"
+            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-200 transition-colors shadow-xs"
           >
-            <Webhook className="w-3.5 h-3.5 text-blue-400" /> Webhook Setup
+            <Webhook className="w-3.5 h-3.5 text-blue-600" /> Webhook Setup
           </button>
 
           <button
             onClick={() => setTriggerModalOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-500/20 transition-all"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
           >
             <Play className="w-3.5 h-3.5 fill-white" /> Run Pipeline
           </button>
@@ -302,32 +280,32 @@ export const DeploymentsPage = () => {
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
-          <p className="text-xs text-slate-400 font-medium">Total Runs</p>
-          <p className="text-2xl font-bold text-white mt-1">{totalExecutions}</p>
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-slate-500 font-medium">Total Runs</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{totalExecutions}</p>
         </div>
-        <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
-          <p className="text-xs text-emerald-400 font-medium">Successful</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{successfulCount}</p>
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-emerald-600 font-medium">Successful</p>
+          <p className="text-2xl font-bold text-emerald-600 mt-1">{successfulCount}</p>
         </div>
-        <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
-          <p className="text-xs text-blue-400 font-medium">In Progress</p>
-          <p className="text-2xl font-bold text-blue-400 mt-1">{runningCount}</p>
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-blue-600 font-medium">In Progress</p>
+          <p className="text-2xl font-bold text-blue-600 mt-1">{runningCount}</p>
         </div>
-        <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800">
-          <p className="text-xs text-rose-400 font-medium">Failed</p>
-          <p className="text-2xl font-bold text-rose-400 mt-1">{failedCount}</p>
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <p className="text-xs text-red-600 font-medium">Failed</p>
+          <p className="text-2xl font-bold text-red-600 mt-1">{failedCount}</p>
         </div>
       </div>
 
       {/* Filter and Control Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
         <div className="flex flex-wrap items-center gap-2">
           {/* Project filter */}
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+            className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-600 shadow-xs font-medium"
           >
             <option value="all">All Projects</option>
             {projects.map((p) => (
@@ -338,15 +316,15 @@ export const DeploymentsPage = () => {
           </select>
 
           {/* Status filter pills */}
-          <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg border border-slate-200">
             {['all', 'running', 'success', 'failed', 'cancelled'].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-2.5 py-1 text-[11px] font-medium rounded-md capitalize transition-colors ${
+                className={`px-2.5 py-1 text-[11px] font-semibold rounded-md capitalize transition-colors ${
                   statusFilter === st
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {st}
@@ -358,7 +336,7 @@ export const DeploymentsPage = () => {
         <button
           onClick={() => loadExecutions(true)}
           disabled={refreshing}
-          className="px-2.5 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg flex items-center justify-center gap-1.5 transition-colors self-end sm:self-auto"
+          className="px-2.5 py-1.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200 rounded-lg flex items-center justify-center gap-1.5 transition-colors self-end sm:self-auto shadow-xs font-medium"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -370,28 +348,28 @@ export const DeploymentsPage = () => {
         {/* Left Column: Executions List */}
         <div className={`space-y-4 ${activeExecution ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center space-y-3 bg-slate-900/30 rounded-2xl border border-slate-800">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-              <p className="text-xs text-slate-400">Loading pipeline executions...</p>
+            <div className="py-20 flex flex-col items-center justify-center space-y-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <p className="text-xs text-slate-500">Loading pipeline executions...</p>
             </div>
           ) : executions.length === 0 ? (
-            <div className="py-20 text-center space-y-4 bg-slate-900/30 rounded-2xl border border-slate-800 p-8">
-              <Rocket className="w-10 h-10 text-slate-600 mx-auto" />
+            <div className="py-20 text-center space-y-4 bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+              <Rocket className="w-10 h-10 text-slate-400 mx-auto" />
               <div>
-                <h3 className="text-sm font-semibold text-white">No Pipeline Executions Found</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                <h3 className="text-sm font-semibold text-slate-900">No Pipeline Executions Found</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                   Trigger your first deployment or configure a GitHub Webhook to automatically trigger builds on commit push.
                 </p>
               </div>
               <button
                 onClick={() => setTriggerModalOpen(true)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-lg shadow-blue-500/20 transition-all"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <Play className="w-3.5 h-3.5 fill-white" /> Run First Pipeline
               </button>
             </div>
           ) : (
-            <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden divide-y divide-slate-800">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 shadow-sm">
               {executions.map((exec) => {
                 const isSelected = activeExecution?.id === exec.id;
                 const isRunning = !['success', 'failed', 'cancelled'].includes(exec.status);
@@ -400,50 +378,50 @@ export const DeploymentsPage = () => {
                   <div
                     key={exec.id}
                     onClick={() => selectExecution(exec)}
-                    className={`p-4 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-800/40 ${
-                      isSelected ? 'bg-blue-950/20 border-l-4 border-l-blue-500' : ''
+                    className={`p-4 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 ${
+                      isSelected ? 'bg-blue-50/60 border-l-4 border-l-blue-600' : ''
                     }`}
                   >
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         {getStatusBadge(exec.status)}
-                        <span className="text-xs font-semibold text-white">
+                        <span className="text-xs font-semibold text-slate-900">
                           {exec.project_name || 'Project'}
                         </span>
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-slate-400 font-mono">
                           #{exec.id.substring(0, 8)}
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
-                          <GitBranch className="w-3.5 h-3.5 text-blue-400" />
-                          <code className="text-slate-300 font-mono text-[11px]">{exec.branch}</code>
+                          <GitBranch className="w-3.5 h-3.5 text-blue-600" />
+                          <code className="text-slate-800 font-mono text-[11px] font-semibold">{exec.branch}</code>
                         </span>
 
                         {exec.commit_sha && (
                           <span className="flex items-center gap-1">
-                            <GitCommit className="w-3.5 h-3.5 text-purple-400" />
-                            <code className="text-slate-400 font-mono text-[11px]">
+                            <GitCommit className="w-3.5 h-3.5 text-indigo-600" />
+                            <code className="text-slate-600 font-mono text-[11px]">
                               {exec.commit_sha.substring(0, 7)}
                             </code>
                           </span>
                         )}
 
-                        <span className="text-[11px] text-slate-500 capitalize">
+                        <span className="text-[11px] text-slate-500 capitalize font-medium">
                           via {exec.trigger_source?.replace('_', ' ')}
                         </span>
 
                         {exec.duration_seconds > 0 && (
-                          <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                            <Clock className="w-3 h-3" />
+                          <span className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                            <Clock className="w-3 h-3 text-slate-400" />
                             {exec.duration_seconds}s
                           </span>
                         )}
                       </div>
 
                       {exec.commit_message && (
-                        <p className="text-[11px] text-slate-400 truncate max-w-md">
+                        <p className="text-[11px] text-slate-500 truncate max-w-md">
                           {exec.commit_message}
                         </p>
                       )}
@@ -456,7 +434,7 @@ export const DeploymentsPage = () => {
                           href={exec.live_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-medium flex items-center gap-1 border border-emerald-500/20 transition-colors"
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold flex items-center gap-1 border border-emerald-200 transition-colors"
                         >
                           <Globe className="w-3 h-3" /> Visit <ExternalLink className="w-3 h-3" />
                         </a>
@@ -466,7 +444,7 @@ export const DeploymentsPage = () => {
                         <button
                           onClick={(e) => handleCancel(exec.id, e)}
                           title="Cancel Execution"
-                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-xs transition-colors"
+                          className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs transition-colors border border-red-200"
                         >
                           <StopCircle className="w-4 h-4" />
                         </button>
@@ -476,7 +454,7 @@ export const DeploymentsPage = () => {
                         <button
                           onClick={(e) => handleRetry(exec.id, e)}
                           title="Retry Execution"
-                          className="p-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-xs transition-colors"
+                          className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs transition-colors border border-blue-200"
                         >
                           <RotateCcw className="w-4 h-4" />
                         </button>
@@ -485,14 +463,14 @@ export const DeploymentsPage = () => {
                       <Link
                         to={`/dashboard/pipelines/${exec.id}`}
                         title="Open 10-Stage Visualizer"
-                        className="px-2 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors font-medium"
+                        className="px-2 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors font-semibold"
                       >
                         Visualizer
                       </Link>
 
                       <button
                         onClick={() => selectExecution(exec)}
-                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -506,16 +484,18 @@ export const DeploymentsPage = () => {
 
         {/* Right Column: Execution Details & Terminal Console */}
         {activeExecution && (
-          <div className="lg:col-span-6 bg-slate-900/60 rounded-2xl border border-slate-800 p-5 space-y-5 sticky top-6">
+          <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 space-y-5 sticky top-20 shadow-sm">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <Terminal className="w-5 h-5 text-blue-400" />
+                <div className="p-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-600">
+                  <Terminal className="w-4 h-4" />
+                </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-slate-900">
                     Run #{activeExecution.id.substring(0, 8)}
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     {activeExecution.project_name} • {activeExecution.branch}
                   </p>
                 </div>
@@ -523,14 +503,14 @@ export const DeploymentsPage = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to={`/dashboard/pipelines/${activeExecution.id}`}
-                  className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium flex items-center gap-1 transition-colors shadow-sm"
+                  className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-1 transition-colors shadow-xs"
                 >
                   <span>10-Stage Visualizer</span>
                   <ExternalLink className="w-3 h-3" />
                 </Link>
                 <button
                   onClick={() => setActiveExecution(null)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -545,28 +525,28 @@ export const DeploymentsPage = () => {
             />
 
             {/* Execution Metadata Grid */}
-            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-900/40 rounded-xl border border-slate-800/80 text-xs">
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
               <div>
-                <span className="text-slate-500 block text-[11px]">Trigger Source</span>
-                <span className="text-slate-200 capitalize font-medium">
+                <span className="text-slate-500 block text-[11px] font-medium">Trigger Source</span>
+                <span className="text-slate-800 capitalize font-semibold">
                   {activeExecution.trigger_source?.replace('_', ' ')}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[11px]">Environment</span>
-                <span className="text-slate-200 capitalize font-medium">
+                <span className="text-slate-500 block text-[11px] font-medium">Environment</span>
+                <span className="text-slate-800 capitalize font-semibold">
                   {activeExecution.environment || 'Production'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[11px]">Duration</span>
-                <span className="text-slate-200 font-medium">
+                <span className="text-slate-500 block text-[11px] font-medium">Duration</span>
+                <span className="text-slate-800 font-semibold font-mono">
                   {activeExecution.duration_seconds ? `${activeExecution.duration_seconds}s` : 'In Progress'}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[11px]">Framework</span>
-                <span className="text-slate-200 capitalize font-medium">
+                <span className="text-slate-500 block text-[11px] font-medium">Framework</span>
+                <span className="text-slate-800 capitalize font-semibold">
                   {activeExecution.detected_framework?.replace('_', ' ') || 'Pure Static HTML'}
                 </span>
               </div>
@@ -574,14 +554,14 @@ export const DeploymentsPage = () => {
 
             {/* Live URL Banner (if success) */}
             {activeExecution.live_url && (
-              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl flex items-center justify-between gap-3">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <Globe className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Globe className="w-4 h-4 text-emerald-600 shrink-0" />
                   <a
                     href={activeExecution.live_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-emerald-400 hover:underline truncate font-mono"
+                    className="text-xs text-emerald-700 hover:underline truncate font-mono font-medium"
                   >
                     {activeExecution.live_url}
                   </a>
@@ -590,7 +570,7 @@ export const DeploymentsPage = () => {
                   href={activeExecution.live_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1 transition-colors"
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1 transition-colors shadow-xs"
                 >
                   Visit Site <ExternalLink className="w-3 h-3" />
                 </a>
@@ -600,23 +580,23 @@ export const DeploymentsPage = () => {
             {/* Terminal Logs Console */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Terminal className="w-3.5 h-3.5 text-slate-400" /> Pipeline Execution Logs
+                <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5 text-slate-500" /> Pipeline Execution Logs
                 </span>
-                <label className="flex items-center gap-1.5 text-[11px] text-slate-400 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer font-medium">
                   <input
                     type="checkbox"
                     checked={autoScroll}
                     onChange={(e) => setAutoScroll(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded text-blue-600 bg-slate-900 border-slate-700"
+                    className="w-3.5 h-3.5 rounded text-blue-600 border-slate-300"
                   />
                   Auto-scroll
                 </label>
               </div>
 
-              <div className="bg-[#0b0f19] border border-slate-800 rounded-xl p-3 font-mono text-[11px] h-64 overflow-y-auto space-y-1.5 shadow-inner">
+              <div className="bg-[#0B0F19] border border-slate-800 rounded-xl p-3 font-mono text-[11px] h-64 overflow-y-auto space-y-1.5 shadow-inner">
                 {activeEvents.length === 0 ? (
-                  <p className="text-slate-600 italic">No output logs recorded yet...</p>
+                  <p className="text-slate-500 italic">No output logs recorded yet...</p>
                 ) : (
                   activeEvents.map((evt, idx) => {
                     const isStageChange = evt.event_type === 'stage_change' || evt.eventType === 'stage_change';
@@ -630,11 +610,11 @@ export const DeploymentsPage = () => {
                           isStageChange
                             ? 'text-blue-400 font-semibold border-l-2 border-l-blue-500 pl-2 my-1'
                             : isError
-                            ? 'text-rose-400'
-                            : 'text-slate-300'
+                            ? 'text-red-400'
+                            : 'text-slate-200'
                         }`}
                       >
-                        <span className="text-slate-600 select-none mr-2">
+                        <span className="text-slate-500 select-none mr-2">
                           {evt.timestamp ? new Date(evt.timestamp).toLocaleTimeString() : ''}
                         </span>
                         {message}
@@ -647,11 +627,11 @@ export const DeploymentsPage = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
               {['failed', 'cancelled'].includes(activeExecution.status) && (
                 <button
                   onClick={() => handleRetry(activeExecution.id)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Retry Run
                 </button>
@@ -660,7 +640,7 @@ export const DeploymentsPage = () => {
               {!['success', 'failed', 'cancelled'].includes(activeExecution.status) && (
                 <button
                   onClick={() => handleCancel(activeExecution.id)}
-                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
                 >
                   <StopCircle className="w-3.5 h-3.5" /> Cancel Run
                 </button>

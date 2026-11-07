@@ -55,14 +55,14 @@ export const ConnectVercelModal = ({ isOpen, onClose, onConnected }) => {
     <Modal isOpen={isOpen} onClose={onClose} title="Connect Vercel Account" maxWidth="max-w-lg">
       <div className="space-y-5">
         {/* Tab selection */}
-        <div className="flex border-b border-slate-800 text-sm">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             type="button"
             onClick={() => setActiveTab('token')}
-            className={`pb-2.5 px-3 font-medium border-b-2 transition ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               activeTab === 'token'
-                ? 'border-white text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Personal Access Token (Recommended)
@@ -70,10 +70,10 @@ export const ConnectVercelModal = ({ isOpen, onClose, onConnected }) => {
           <button
             type="button"
             onClick={() => setActiveTab('oauth')}
-            className={`pb-2.5 px-3 font-medium border-b-2 transition ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               activeTab === 'oauth'
-                ? 'border-white text-white'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             OAuth Flow
@@ -81,118 +81,101 @@ export const ConnectVercelModal = ({ isOpen, onClose, onConnected }) => {
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-950/50 border border-rose-500/30 rounded-xl flex items-start gap-2.5 text-xs text-rose-200">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {activeTab === 'oauth' ? (
-          <div className="space-y-4 py-2">
-            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
-              <div className="flex items-center gap-2 text-white font-medium text-sm">
-                <Triangle className="w-4 h-4 fill-white" />
-                Vercel OAuth 2.0 Authorization
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-600">
+              <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                Vercel Integration Permissions:
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Connect via official Vercel authorization. You will be redirected to vercel.com to approve read & deployment permissions for your user account or team.
+              <p>
+                Authorizing Pipeline One will allow automated deployment creation, domain configuration, and build status polling.
               </p>
             </div>
 
             <button
+              type="button"
               onClick={handleOAuthConnect}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-black font-semibold text-sm transition shadow-lg shadow-white/10 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl shadow-sm transition-all disabled:opacity-50"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-black" />
-                  Connecting to Vercel...
-                </>
-              ) : (
-                <>
-                  <Triangle className="w-4 h-4 fill-current" />
-                  Authorize with Vercel OAuth
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </>
-              )}
+              <Triangle className="w-3.5 h-3.5 fill-white" />
+              {loading ? 'Redirecting to Vercel...' : 'Continue with Vercel OAuth'}
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
           <form onSubmit={handleTokenSubmit} className="space-y-4">
-            <div className="flex items-start gap-3 p-3.5 bg-slate-900/80 rounded-xl border border-slate-800 text-xs text-slate-300">
-              <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                Your Vercel token is encrypted with AES-256-GCM before storage. It is used to query projects, link static builds, and trigger deployments.
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700">Vercel Personal Access Token</label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="password"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="vck_xxxxxxxxxxxxxxxxxxxxxxxx"
+                  required
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 pt-0.5">
+                Generate an access token in your{' '}
+                <a
+                  href="https://vercel.com/account/tokens"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:underline inline-flex items-center gap-0.5 font-medium"
+                >
+                  Vercel Account Settings <ExternalLink className="w-3 h-3" />
+                </a>.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700">Team / Scope ID (Optional)</label>
+              <div className="relative">
+                <Users className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  value={teamId}
+                  onChange={(e) => setTeamId(e.target.value)}
+                  placeholder="team_xxxxxxxxxxxx (leave empty for personal account)"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
+                />
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Vercel Personal Access Token</label>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="password"
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    placeholder="Enter your Vercel token..."
-                    required
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-white font-mono"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400 pt-0.5">
-                  Generate a token in{' '}
-                  <a
-                    href="https://vercel.com/account/tokens"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-400 hover:underline inline-flex items-center gap-0.5"
-                  >
-                    Vercel Account Settings &rarr; Tokens <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-300">Team ID / Slug (Optional)</label>
-                <div className="relative">
-                  <Users className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                  <input
-                    type="text"
-                    value={teamId}
-                    onChange={(e) => setTeamId(e.target.value)}
-                    placeholder="e.g. team_xxxxxxxxxxxx (leave empty for personal account)"
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-white font-mono"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400">Leave blank to manage projects under your personal scope.</p>
-              </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              Tokens are encrypted at rest with AES-256-GCM.
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-slate-300 hover:text-white transition"
+                className="px-4 py-2 text-xs text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-slate-200 text-slate-950 font-semibold text-sm transition shadow-lg shadow-white/10 disabled:opacity-50"
+                disabled={loading || !token.trim()}
+                className="px-5 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin text-black" />
-                    Validating...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying Token...
                   </>
                 ) : (
-                  <>
-                    <Triangle className="w-4 h-4 fill-slate-950" />
-                    Connect Vercel
-                  </>
+                  'Connect Vercel'
                 )}
               </button>
             </div>
@@ -204,4 +187,3 @@ export const ConnectVercelModal = ({ isOpen, onClose, onConnected }) => {
 };
 
 export default ConnectVercelModal;
-

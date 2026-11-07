@@ -10,7 +10,6 @@ import {
   ArrowDown,
   ShieldCheck,
   Filter,
-  Trash2,
 } from 'lucide-react';
 
 export const LiveTerminalLogViewer = ({
@@ -89,17 +88,17 @@ export const LiveTerminalLogViewer = ({
     switch (level?.toUpperCase()) {
       case 'ERROR':
       case 'FATAL':
-        return 'text-rose-400 bg-rose-950/30 border-rose-500/30';
+        return 'text-red-400 bg-red-950/40 border-red-500/30';
       case 'WARN':
       case 'WARNING':
-        return 'text-amber-400 bg-amber-950/30 border-amber-500/30';
+        return 'text-amber-400 bg-amber-950/40 border-amber-500/30';
       case 'SUCCESS':
-        return 'text-emerald-400 bg-emerald-950/30 border-emerald-500/30';
+        return 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30';
       case 'DEBUG':
-        return 'text-slate-500 bg-slate-800/20 border-slate-700/20';
+        return 'text-slate-400 bg-slate-800/40 border-slate-700/30';
       case 'INFO':
       default:
-        return 'text-sky-400 bg-sky-950/30 border-sky-500/30';
+        return 'text-blue-400 bg-blue-950/40 border-blue-500/30';
     }
   };
 
@@ -107,7 +106,7 @@ export const LiveTerminalLogViewer = ({
     switch (level?.toUpperCase()) {
       case 'ERROR':
       case 'FATAL':
-        return 'text-rose-300 font-semibold';
+        return 'text-red-300 font-semibold';
       case 'WARN':
       case 'WARNING':
         return 'text-amber-300';
@@ -119,47 +118,47 @@ export const LiveTerminalLogViewer = ({
   };
 
   return (
-    <div className="w-full bg-[#080C14] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[560px]">
+    <div className="w-full bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col h-[560px]">
       {/* Top Toolbar */}
-      <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
         {/* Left: Title & Stream Status */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 font-mono font-medium text-slate-300">
-            <Terminal className="w-4 h-4 text-blue-400" />
+          <div className="flex items-center gap-2 font-mono font-semibold text-slate-800">
+            <Terminal className="w-4 h-4 text-blue-600" />
             <span>Execution Console</span>
           </div>
 
           {/* SSE Stream status indicator */}
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-mono">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-[11px] font-mono shadow-xs">
             {streamStatus === 'connected' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400">Live SSE</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-emerald-700 font-semibold">Live SSE</span>
               </>
             )}
             {streamStatus === 'connecting' && (
               <>
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                <span className="text-amber-400">Connecting...</span>
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                <span className="text-amber-700 font-semibold">Connecting...</span>
               </>
             )}
             {streamStatus === 'reconnecting' && (
               <>
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-amber-400">Reconnecting...</span>
+                <span className="text-amber-700 font-semibold">Reconnecting...</span>
               </>
             )}
             {(streamStatus === 'closed' || streamStatus === 'idle') && (
               <>
-                <span className="w-2 h-2 rounded-full bg-slate-500" />
-                <span className="text-slate-400">Archived</span>
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span className="text-slate-600 font-semibold">Archived</span>
               </>
             )}
           </div>
 
           {/* Secret Redaction Verified Shield */}
-          <div className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-400/90 font-medium px-2 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/20">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-700 font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Secrets Redacted</span>
           </div>
         </div>
@@ -168,13 +167,13 @@ export const LiveTerminalLogViewer = ({
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Search logs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 pr-2 py-1 w-32 sm:w-44 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500"
+              className="pl-8 pr-2 py-1 w-32 sm:w-44 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 text-xs focus:outline-none focus:border-blue-600 shadow-xs"
             />
           </div>
 
@@ -182,7 +181,7 @@ export const LiveTerminalLogViewer = ({
           <select
             value={selectedLevel}
             onChange={(e) => setSelectedLevel(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-slate-300 text-xs focus:outline-none focus:border-blue-500"
+            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 text-xs focus:outline-none focus:border-blue-600 shadow-xs"
           >
             <option value="ALL">All Levels</option>
             <option value="INFO">Info</option>
@@ -195,10 +194,10 @@ export const LiveTerminalLogViewer = ({
           {isStreaming && (
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className={`p-1.5 rounded-lg border transition-colors ${
+              className={`p-1.5 rounded-lg border transition-colors shadow-xs ${
                 isPaused
-                  ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                  : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800 font-semibold'
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
               title={isPaused ? 'Resume auto-scroll' : 'Pause streaming'}
             >
@@ -209,10 +208,10 @@ export const LiveTerminalLogViewer = ({
           {/* Auto-scroll stick toggle */}
           <button
             onClick={() => setAutoScroll(!autoScroll)}
-            className={`p-1.5 rounded-lg border transition-colors ${
+            className={`p-1.5 rounded-lg border transition-colors shadow-xs ${
               autoScroll
-                ? 'bg-blue-600/20 border-blue-500/40 text-blue-400'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'bg-white border-slate-200 text-slate-500 hover:text-slate-900'
             }`}
             title={autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
           >
@@ -222,16 +221,16 @@ export const LiveTerminalLogViewer = ({
           {/* Copy Button */}
           <button
             onClick={handleCopyLogs}
-            className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
             title="Copy logs"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
 
           {/* Download Button */}
           <button
             onClick={handleDownloadLogs}
-            className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-xs"
             title="Download logs (.txt)"
           >
             <Download className="w-3.5 h-3.5" />
@@ -241,15 +240,15 @@ export const LiveTerminalLogViewer = ({
 
       {/* Active Stage Filter Pill if set */}
       {filterStage && (
-        <div className="bg-blue-950/40 border-b border-blue-500/20 px-4 py-1.5 flex items-center justify-between text-xs text-blue-300">
-          <span className="flex items-center gap-1.5">
-            <Filter className="w-3 h-3 text-blue-400" />
-            Filtered to stage: <strong className="font-mono text-white">{filterStage}</strong>
+        <div className="bg-blue-50 border-b border-blue-100 px-4 py-1.5 flex items-center justify-between text-xs text-blue-900">
+          <span className="flex items-center gap-1.5 font-medium">
+            <Filter className="w-3 h-3 text-blue-600" />
+            Filtered to stage: <strong className="font-mono text-blue-700">{filterStage}</strong>
           </span>
           {onClearFilterStage && (
             <button
               onClick={onClearFilterStage}
-              className="text-xs text-blue-400 hover:text-blue-200 underline font-medium"
+              className="text-xs text-blue-600 hover:text-blue-800 underline font-semibold"
             >
               Clear filter
             </button>
@@ -260,10 +259,10 @@ export const LiveTerminalLogViewer = ({
       {/* Terminal Output Body */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 p-4 overflow-y-auto font-mono text-xs leading-relaxed space-y-1 select-text bg-[#070A10]"
+        className="flex-1 p-4 overflow-y-auto font-mono text-xs leading-relaxed space-y-1 select-text bg-[#0B0F19]"
       >
         {filteredLogs.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
+          <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
             <Terminal className="w-8 h-8 opacity-40" />
             <p className="text-xs">
               {logs.length === 0
@@ -282,22 +281,22 @@ export const LiveTerminalLogViewer = ({
             return (
               <div
                 key={log.id || idx}
-                className="flex items-start gap-2.5 py-0.5 hover:bg-slate-900/50 rounded px-1 group transition-colors"
+                className="flex items-start gap-2.5 py-0.5 hover:bg-slate-900/60 rounded px-1 group transition-colors"
               >
                 {/* Line number */}
-                <span className="text-[10px] text-slate-700 w-8 shrink-0 text-right select-none pt-0.5">
+                <span className="text-[10px] text-slate-600 w-8 shrink-0 text-right select-none pt-0.5">
                   {idx + 1}
                 </span>
 
                 {/* Timestamp */}
                 {timestamp && (
-                  <span className="text-[10px] text-slate-500 shrink-0 select-none pt-0.5">
+                  <span className="text-[10px] text-slate-400 shrink-0 select-none pt-0.5">
                     {timestamp}
                   </span>
                 )}
 
                 {/* Stage Tag */}
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700/60 shrink-0 select-none">
+                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 shrink-0 select-none">
                   {stage}
                 </span>
 
@@ -320,15 +319,15 @@ export const LiveTerminalLogViewer = ({
       </div>
 
       {/* Terminal Footer Bar */}
-      <div className="px-4 py-2 bg-slate-950 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+      <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 font-mono">
         <div className="flex items-center gap-3">
-          <span>Total lines: {logs.length}</span>
+          <span>Total lines: <strong className="text-slate-700 font-semibold">{logs.length}</strong></span>
           {filteredLogs.length !== logs.length && (
-            <span className="text-blue-400">Showing: {filteredLogs.length}</span>
+            <span className="text-blue-600 font-semibold">Showing: {filteredLogs.length}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          {isPaused && <span className="text-amber-400 font-sans font-medium">STREAM PAUSED</span>}
+          {isPaused && <span className="text-amber-700 font-sans font-semibold">STREAM PAUSED</span>}
           <span>UTF-8 • Standard Out / Err</span>
         </div>
       </div>
@@ -337,4 +336,3 @@ export const LiveTerminalLogViewer = ({
 };
 
 export default LiveTerminalLogViewer;
-

@@ -5,21 +5,15 @@ import {
   Play,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Clock,
   RefreshCw,
   Copy,
   Check,
   Terminal,
   StopCircle,
-  Layers,
-  Tag,
-  UploadCloud,
-  ChevronRight,
   ExternalLink,
   ShieldAlert,
   Loader2,
-  Filter
 } from 'lucide-react';
 import {
   listDockerBuilds,
@@ -63,7 +57,6 @@ export const BuildsPage = () => {
 
       if (buildsRes.status === 'fulfilled' && buildsRes.value?.builds) {
         setBuilds(buildsRes.value.builds);
-        // If query param matches or nothing selected, select first
         const targetId = buildIdQuery || buildsRes.value.builds[0]?.id;
         const initial = buildsRes.value.builds.find((b) => b.id === targetId) || buildsRes.value.builds[0];
         if (initial) {
@@ -92,75 +85,61 @@ export const BuildsPage = () => {
       return;
     }
 
-    // Clean up previous SSE
     if (sseRef.current) {
       sseRef.current.close();
       sseRef.current = null;
     }
 
-    const fetchStaticLogs = async () => {
+    const fetchPastLogs = async () => {
       try {
         const res = await getDockerBuildLogs(selectedBuild.id);
         if (res.logs) {
-          setLogs(res.logs);
+          setLogs(res.logs.map((l) => (typeof l === 'string' ? l : l.line || JSON.stringify(l))));
         }
       } catch (err) {
-        console.error('Failed to fetch build logs', err);
+        console.error('Failed to load past logs', err);
       }
     };
 
-    fetchStaticLogs();
+    fetchPastLogs();
 
-    // If build is currently queued or in_progress, connect SSE stream
     if (['queued', 'in_progress'].includes(selectedBuild.status)) {
-      const sseUrl = `/api/docker/builds/${selectedBuild.id}/events${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      const sseUrl = `/api/integrations/docker/builds/${selectedBuild.id}/stream?token=${encodeURIComponent(token || '')}`;
       const es = new EventSource(sseUrl);
-      sseRef.current = es;
 
-      es.addEventListener('initial_log', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (Array.isArray(data.logs)) {
-            setLogs(data.logs);
-          }
-        } catch (err) {}
-      });
-
-      es.addEventListener('log', (e) => {
+      es.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
           if (data.line) {
             setLogs((prev) => [...prev, data.line]);
           }
-        } catch (err) {}
-      });
-
-      es.addEventListener('status', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          setSelectedBuild((prev) => (prev ? { ...prev, ...data } : prev));
-          setBuilds((prevList) =>
-            prevList.map((item) => (item.id === selectedBuild.id ? { ...item, ...data } : item))
-          );
-          if (['completed', 'failed', 'cancelled'].includes(data.status)) {
-            es.close();
+          if (data.status) {
+            setSelectedBuild((prev) => ({ ...prev, status: data.status }));
+            if (['completed', 'failed', 'cancelled'].includes(data.status)) {
+              es.close();
+              loadData();
+            }
           }
-        } catch (err) {}
-      });
+        } catch {
+          // ignore parsing error
+        }
+      };
 
       es.onerror = () => {
         es.close();
       };
+
+      sseRef.current = es;
     }
 
     return () => {
       if (sseRef.current) {
         sseRef.current.close();
+        sseRef.current = null;
       }
     };
-  }, [selectedBuild?.id, selectedBuild?.status, token]);
+  }, [selectedBuild?.id, selectedBuild?.status]);
 
-  // Auto scroll terminal to bottom
   useEffect(() => {
     if (autoScroll && terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -172,20 +151,16 @@ export const BuildsPage = () => {
     try {
       setCancelling(true);
       await cancelDockerBuild(selectedBuild.id);
-      notify.success('Build cancellation signal dispatched');
-      setSelectedBuild((prev) => ({ ...prev, status: 'cancelled' }));
-      setBuilds((prev) =>
-        prev.map((b) => (b.id === selectedBuild.id ? { ...b, status: 'cancelled' } : b))
-      );
+      notify.success('Build cancellation requested');
+      loadData();
     } catch (err) {
-      notify.error(err.response?.data?.error || 'Failed to cancel build');
+      notify.error(err.response?.data?.message || err.message || 'Failed to cancel build');
     } finally {
       setCancelling(false);
     }
   };
 
   const copyAllLogs = () => {
-    if (logs.length === 0) return;
     navigator.clipboard.writeText(logs.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -201,37 +176,37 @@ export const BuildsPage = () => {
     switch (status) {
       case 'completed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="w-3 h-3" /> Completed
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Completed
           </span>
         );
       case 'in_progress':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
-            <Loader2 className="w-3 h-3 animate-spin" /> In Progress
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <Loader2 className="w-3 h-3 text-blue-600 animate-spin" /> In Progress
           </span>
         );
       case 'queued':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
-            <Clock className="w-3 h-3" /> Queued
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-600" /> Queued
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/30">
-            <XCircle className="w-3 h-3" /> Failed
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+            <XCircle className="w-3 h-3 text-red-600" /> Failed
           </span>
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/30">
-            <StopCircle className="w-3 h-3" /> Cancelled
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            <StopCircle className="w-3 h-3 text-slate-500" /> Cancelled
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
             {status}
           </span>
         );
@@ -241,13 +216,13 @@ export const BuildsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Container className="w-6 h-6 text-blue-400" />
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5">
+            <Container className="w-6 h-6 text-blue-600" />
             Docker Container Builds
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Build, containerize, and stream real-time logs for static website deployments.
           </p>
         </div>
@@ -255,14 +230,14 @@ export const BuildsPage = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={loadData}
-            className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-slate-400 hover:text-white transition"
+            className="p-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 transition shadow-xs"
             title="Refresh builds"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => setIsBuildModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition shadow-lg shadow-blue-900/30"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-sm"
           >
             <Play className="w-4 h-4 fill-white" />
             New Docker Build
@@ -272,11 +247,11 @@ export const BuildsPage = () => {
 
       {/* Docker Engine status banner if daemon is offline */}
       {dockerEngine && !dockerEngine.available && (
-        <div className="p-4 bg-amber-950/30 border border-amber-500/30 rounded-2xl flex items-start gap-3.5">
-          <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3.5 shadow-xs">
+          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-amber-300">Docker Engine Daemon Inactive</h4>
-            <p className="text-xs text-amber-200/80 leading-relaxed">
+            <h4 className="text-sm font-semibold text-amber-900">Docker Engine Daemon Inactive</h4>
+            <p className="text-xs text-amber-800 leading-relaxed">
               The local Docker CLI is installed ({dockerEngine.cliVersion || 'detected'}), but the Docker daemon is unreachable. Builds will fail until Docker Desktop or the system Docker service is started.
             </p>
           </div>
@@ -288,15 +263,15 @@ export const BuildsPage = () => {
         {/* Left Column: Build History List */}
         <div className="lg:col-span-4 space-y-3">
           {/* Filter tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-900/80 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
             {['all', 'running', 'completed', 'failed'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setStatusFilter(tab)}
-                className={`flex-1 py-1.5 px-2 rounded-lg font-medium capitalize transition ${
+                className={`flex-1 py-1.5 px-2 rounded-lg font-semibold capitalize transition ${
                   statusFilter === tab
-                    ? 'bg-slate-800 text-white shadow'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab}
@@ -307,7 +282,7 @@ export const BuildsPage = () => {
           {/* Builds cards */}
           <div className="space-y-2 max-h-[680px] overflow-y-auto pr-1">
             {filteredBuilds.length === 0 ? (
-              <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-500 text-xs">
+              <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs shadow-sm">
                 No Docker builds match the selected filter.
               </div>
             ) : (
@@ -317,27 +292,27 @@ export const BuildsPage = () => {
                   <button
                     key={b.id}
                     onClick={() => setSelectedBuild(b)}
-                    className={`w-full text-left p-3.5 rounded-xl border transition ${
+                    className={`w-full text-left p-3.5 rounded-xl border transition shadow-xs ${
                       isSelected
-                        ? 'bg-blue-950/20 border-blue-500/60 ring-1 ring-blue-500/30'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                        ? 'bg-blue-50/80 border-blue-400 ring-1 ring-blue-400'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-semibold text-white truncate max-w-[180px]">
+                      <span className="text-sm font-semibold text-slate-900 truncate max-w-[180px]">
                         {b.project_name || 'Project'}
                       </span>
                       {getStatusBadge(b.status)}
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                    <div className="flex items-center gap-2 text-xs text-slate-600 font-mono">
                       <span>{b.image_name}:{b.image_tag}</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2.5 pt-2 border-t border-slate-800/60">
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-100">
                       <span>{new Date(b.created_at).toLocaleTimeString()}</span>
                       {b.duration_seconds !== null && b.duration_seconds !== undefined && (
-                        <span>{b.duration_seconds}s</span>
+                        <span className="font-medium text-slate-600">{b.duration_seconds}s</span>
                       )}
                     </div>
                   </button>
@@ -352,16 +327,18 @@ export const BuildsPage = () => {
           {selectedBuild ? (
             <>
               {/* Build Details Card */}
-              <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center gap-2.5">
-                    <Container className="w-5 h-5 text-blue-400" />
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-600">
+                      <Container className="w-5 h-5" />
+                    </div>
                     <div>
-                      <h3 className="text-base font-semibold text-white">
+                      <h3 className="text-base font-semibold text-slate-900">
                         {selectedBuild.image_name}:{selectedBuild.image_tag}
                       </h3>
-                      <p className="text-xs text-slate-400">
-                        Project: <strong className="text-slate-200">{selectedBuild.project_name}</strong> &bull; ID: <span className="font-mono">{selectedBuild.id.slice(0, 8)}</span>
+                      <p className="text-xs text-slate-500">
+                        Project: <strong className="text-slate-800">{selectedBuild.project_name}</strong> &bull; ID: <span className="font-mono">{selectedBuild.id.slice(0, 8)}</span>
                       </p>
                     </div>
                   </div>
@@ -372,7 +349,7 @@ export const BuildsPage = () => {
                       <button
                         onClick={handleCancelBuild}
                         disabled={cancelling}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-medium transition"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-semibold transition"
                       >
                         <StopCircle className="w-3.5 h-3.5" />
                         Cancel
@@ -383,34 +360,34 @@ export const BuildsPage = () => {
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                   <div>
-                    <span className="text-slate-500 block">Base Runtime</span>
-                    <span className="font-mono text-slate-200 truncate block">
+                    <span className="text-slate-500 block font-medium">Base Runtime</span>
+                    <span className="font-mono text-slate-800 font-semibold truncate block">
                       {selectedBuild.project_type === 'react_vite' ? 'node:20 / nginx' : 'nginx:alpine-slim'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Registry Target</span>
-                    <span className="font-mono text-slate-200 truncate block">
+                    <span className="text-slate-500 block font-medium">Registry Target</span>
+                    <span className="font-mono text-slate-800 font-semibold truncate block">
                       {selectedBuild.push_to_dockerhub ? (selectedBuild.destination_repo || 'Docker Hub') : 'Local Docker Engine'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Duration</span>
-                    <span className="font-mono text-slate-200 block">
+                    <span className="text-slate-500 block font-medium">Duration</span>
+                    <span className="font-mono text-slate-800 font-semibold block">
                       {selectedBuild.duration_seconds ? `${selectedBuild.duration_seconds} seconds` : 'Running...'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Started</span>
-                    <span className="text-slate-200 block">
+                    <span className="text-slate-500 block font-medium">Started</span>
+                    <span className="text-slate-800 font-medium block">
                       {new Date(selectedBuild.created_at).toLocaleString()}
                     </span>
                   </div>
                 </div>
 
                 {selectedBuild.error_message && (
-                  <div className="p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-start gap-2">
-                    <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 flex items-start gap-2">
+                    <XCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                     <div>
                       <strong className="block font-semibold">Build Error Details:</strong>
                       <span className="font-mono text-[11px]">{selectedBuild.error_message}</span>
@@ -420,12 +397,12 @@ export const BuildsPage = () => {
               </div>
 
               {/* Terminal View */}
-              <div className="bg-[#0b0f19] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+              <div className="bg-[#0B0F19] rounded-2xl border border-slate-800 overflow-hidden shadow-sm">
                 {/* Terminal Header */}
                 <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
                   <div className="flex items-center gap-2">
                     <Terminal className="w-4 h-4 text-blue-400" />
-                    <span className="font-mono font-medium text-slate-300">build.log</span>
+                    <span className="font-mono font-medium text-slate-200">build.log</span>
                     {['queued', 'in_progress'].includes(selectedBuild.status) && (
                       <span className="flex items-center gap-1 text-[11px] text-blue-400">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -456,9 +433,9 @@ export const BuildsPage = () => {
                 </div>
 
                 {/* Terminal Content */}
-                <div className="p-4 font-mono text-xs text-slate-300 max-h-[460px] min-h-[300px] overflow-y-auto space-y-1 select-text">
+                <div className="p-4 font-mono text-xs text-slate-200 max-h-[460px] min-h-[300px] overflow-y-auto space-y-1 select-text">
                   {logs.length === 0 ? (
-                    <div className="text-slate-600 italic py-8 text-center">
+                    <div className="text-slate-500 italic py-8 text-center">
                       Waiting for build output or log initialization...
                     </div>
                   ) : (
@@ -472,7 +449,7 @@ export const BuildsPage = () => {
                           key={idx}
                           className={`leading-relaxed whitespace-pre-wrap break-all ${
                             isErr
-                              ? 'text-rose-400'
+                              ? 'text-red-400'
                               : isSuccess
                               ? 'text-emerald-400'
                               : isStep
@@ -491,13 +468,13 @@ export const BuildsPage = () => {
 
               {/* Success / Image Info Card */}
               {selectedBuild.status === 'completed' && (
-                <div className="p-4 bg-emerald-950/20 border border-emerald-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                      <CheckCircle2 className="w-4 h-4" />
+                    <div className="flex items-center gap-2 text-emerald-800 font-semibold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       Image Ready for Deployment
                     </div>
-                    <div className="text-slate-300 font-mono text-[11px]">
+                    <div className="text-slate-700 font-mono text-[11px]">
                       docker run -d -p 8080:80 {selectedBuild.image_name}:{selectedBuild.image_tag}
                     </div>
                   </div>
@@ -507,7 +484,7 @@ export const BuildsPage = () => {
                       href={`https://hub.docker.com/r/${selectedBuild.destination_repo}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow shrink-0"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-xs shrink-0"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       View on Docker Hub
@@ -517,12 +494,12 @@ export const BuildsPage = () => {
               )}
             </>
           ) : (
-            <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 space-y-3">
-              <Container className="w-10 h-10 text-slate-600 mx-auto" />
-              <p className="text-sm font-medium">Select a build from the history to view real-time console output</p>
+            <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 space-y-3 shadow-sm">
+              <Container className="w-10 h-10 text-slate-400 mx-auto" />
+              <p className="text-sm font-semibold text-slate-800">Select a build from the history to view real-time console output</p>
               <button
                 onClick={() => setIsBuildModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-sm"
               >
                 <Play className="w-3.5 h-3.5 fill-white" /> Trigger First Build
               </button>
@@ -545,4 +522,3 @@ export const BuildsPage = () => {
 };
 
 export default BuildsPage;
-
