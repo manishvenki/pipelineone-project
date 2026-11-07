@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Lightweight DevOps automation platform for static website projects",
   "scripts": {
+    "start": "npm run dev",
     "install:all": "npm install && npm install --prefix server && npm install --prefix client",
     "dev": "concurrently -n \"server,client\" -c \"blue,magenta\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "dev:server": "npm run dev --prefix server",
@@ -17,3 +18,4 @@
   "author": "Pipeline One Team",
   "license": "MIT"
 }
+
