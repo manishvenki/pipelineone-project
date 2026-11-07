@@ -27,3 +27,4 @@ export const Badge = ({ children, variant = 'default', size = 'sm', className = 
 };
 
 export default Badge;
+

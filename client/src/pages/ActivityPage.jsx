@@ -92,3 +92,4 @@ export const ActivityPage = () => {
 };
 
 export default ActivityPage;
+

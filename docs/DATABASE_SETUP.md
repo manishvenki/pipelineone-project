@@ -45,3 +45,4 @@ MongoDB Atlas is optional in Phase 1 and used to store flexible project scans an
    MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.example.mongodb.net/pipeline_one?retryWrites=true&w=majority
    ```
 5. Check health: Navigate to `/api/health` or **Platform Settings** in the dashboard to view Atlas connectivity status.
+

@@ -23,3 +23,4 @@ export const NotFoundPage = () => {
 };
 
 export default NotFoundPage;
+

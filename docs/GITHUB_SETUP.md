@@ -53,3 +53,4 @@ If you want to immediately connect without creating an OAuth app:
 5. Click **Generate token** and copy the string (`ghp_...`).
 6. In Pipeline One, open **Integrations** > **Connect GitHub** > **Personal Access Token tab**, paste the token, and click **Connect Token**.
 7. The token is immediately verified against the GitHub API and securely encrypted with AES-256-GCM.
+

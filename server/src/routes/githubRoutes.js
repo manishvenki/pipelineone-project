@@ -12,3 +12,4 @@ router.get('/repositories/:owner/:repo', githubController.getRepositoryDetails);
 router.get('/repositories/:owner/:repo/branches', githubController.getRepositoryBranches);
 
 export default router;
+

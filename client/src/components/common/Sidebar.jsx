@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FolderGit2,
   Boxes,
+  Container,
   Rocket,
   Activity,
   Settings,
@@ -26,6 +27,7 @@ export const Sidebar = ({ isOpen, onClose }) => {
     { label: 'Overview', to: '/dashboard', icon: LayoutDashboard, end: true },
     { label: 'My Projects', to: '/dashboard/projects', icon: FolderGit2 },
     { label: 'Integrations', to: '/dashboard/integrations', icon: Boxes },
+    { label: 'Docker Builds', to: '/dashboard/builds', icon: Container },
     {
       label: 'Deployments',
       to: '/dashboard/deployments',
@@ -117,3 +119,4 @@ export const Sidebar = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
+

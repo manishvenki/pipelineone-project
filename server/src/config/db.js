@@ -2,8 +2,12 @@ import pg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import env from './env.js';
 import logger from '../utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const { Pool } = pg;
 
@@ -19,6 +23,10 @@ const fallbackStore = {
   project_repositories: new Map(),
   user_settings: new Map(),
   activity_records: new Map(),
+  docker_builds: new Map(),
+  docker_images: new Map(),
+  integration_verification_events: new Map(),
+  platform_connection_metadata: new Map(),
 };
 
 /**
@@ -55,8 +63,8 @@ export const initDatabase = async () => {
     connectionError = null;
     logger.info('Connected to PostgreSQL successfully');
 
-    // Run schema migrations
-    const schemaPath = path.resolve(process.cwd(), 'src/database/schema.sql');
+    // Run schema migrations reliably
+    const schemaPath = path.resolve(__dirname, '../database/schema.sql');
     if (fs.existsSync(schemaPath)) {
       const schemaSql = fs.readFileSync(schemaPath, 'utf8');
       await client.query(schemaSql);
@@ -159,6 +167,48 @@ const executeFallbackQuery = async (text, params) => {
       if (limitMatch) {
         items = items.slice(0, parseInt(limitMatch[1], 10));
       }
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from docker_builds')) {
+      let items = Array.from(fallbackStore.docker_builds.values()).map(b => ({ ...b }));
+      if (lower.includes('where id = $1 and user_id = $2')) {
+        items = items.filter((b) => b.id === params[0] && b.user_id === params[1]);
+      } else if (lower.includes('where id = $1')) {
+        items = items.filter((b) => b.id === params[0]);
+      } else if (lower.includes('where user_id = $1')) {
+        items = items.filter((b) => b.user_id === params[0]);
+      }
+      items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from docker_images')) {
+      let items = Array.from(fallbackStore.docker_images.values()).map(img => ({ ...img }));
+      if (lower.includes('where user_id = $1')) {
+        items = items.filter((img) => img.user_id === params[0]);
+      } else if (lower.includes('where docker_build_id = $1')) {
+        items = items.filter((img) => img.docker_build_id === params[0]);
+      }
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from platform_connection_metadata')) {
+      let items = Array.from(fallbackStore.platform_connection_metadata.values()).map(m => ({ ...m }));
+      if (lower.includes('where user_id = $1 and provider = $2')) {
+        items = items.filter((m) => m.user_id === params[0] && m.provider === params[1]);
+      }
+      return { rows: items, rowCount: items.length };
+    }
+
+    if (lower.includes('from integration_verification_events')) {
+      let items = Array.from(fallbackStore.integration_verification_events.values()).map(e => ({ ...e }));
+      if (lower.includes('where user_id = $1 and provider = $2')) {
+        items = items.filter((e) => e.user_id === params[0] && e.provider === params[1]);
+      } else if (lower.includes('where user_id = $1')) {
+        items = items.filter((e) => e.user_id === params[0]);
+      }
+      items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       return { rows: items, rowCount: items.length };
     }
 
@@ -271,6 +321,87 @@ const executeFallbackQuery = async (text, params) => {
     return { rows: [settings], rowCount: 1 };
   }
 
+  if (lower.startsWith('insert into docker_builds')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const build = {
+      id,
+      user_id: params[0],
+      project_id: params[1],
+      status: params[2] || 'queued',
+      image_name: params[3],
+      image_tag: params[4] || 'latest',
+      dockerfile_content: params[5] || null,
+      build_args: params[6] || {},
+      started_at: params[7] || now,
+      completed_at: params[8] || null,
+      duration_ms: params[9] || null,
+      exit_code: params[10] || null,
+      error_summary: params[11] || null,
+      log_file_path: params[12] || null,
+      created_at: now,
+      updated_at: now,
+    };
+    fallbackStore.docker_builds.set(id, build);
+    return { rows: [{ ...build }], rowCount: 1 };
+  }
+
+  if (lower.startsWith('insert into docker_images')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const image = {
+      id,
+      docker_build_id: params[0] || null,
+      user_id: params[1],
+      registry: params[2] || 'docker.io',
+      repository: params[3],
+      tag: params[4],
+      digest: params[5] || null,
+      size_bytes: params[6] || null,
+      pushed_at: params[7] || now,
+      created_at: now,
+    };
+    fallbackStore.docker_images.set(id, image);
+    return { rows: [{ ...image }], rowCount: 1 };
+  }
+
+  if (lower.startsWith('insert into integration_verification_events')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const event = {
+      id,
+      user_id: params[0],
+      provider: params[1],
+      status: params[2],
+      message: params[3],
+      response_time_ms: params[4] || 0,
+      metadata: params[5] || {},
+      created_at: now,
+    };
+    fallbackStore.integration_verification_events.set(id, event);
+    return { rows: [{ ...event }], rowCount: 1 };
+  }
+
+  if (lower.startsWith('insert into platform_connection_metadata')) {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const meta = {
+      id,
+      user_id: params[0],
+      provider: params[1],
+      config: params[2] || {},
+      created_at: now,
+      updated_at: now,
+    };
+    for (const [key, existing] of fallbackStore.platform_connection_metadata.entries()) {
+      if (existing.user_id === meta.user_id && existing.provider === meta.provider) {
+        fallbackStore.platform_connection_metadata.delete(key);
+      }
+    }
+    fallbackStore.platform_connection_metadata.set(id, meta);
+    return { rows: [{ ...meta }], rowCount: 1 };
+  }
+
   if (lower.startsWith('insert into activity_records')) {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -315,6 +446,29 @@ const executeFallbackQuery = async (text, params) => {
   }
 
   // 4. UPDATE queries
+  if (lower.startsWith('update docker_builds')) {
+    // Dynamic or specific update
+    let updated = null;
+    const buildId = params[params.length - 1];
+    const build = fallbackStore.docker_builds.get(buildId);
+    if (build) {
+      if (lower.includes('status = $1') && lower.includes('completed_at = $2')) {
+        build.status = params[0];
+        build.completed_at = params[1];
+        build.duration_ms = params[2];
+        build.exit_code = params[3];
+        build.error_summary = params[4];
+        build.updated_at = new Date().toISOString();
+        updated = build;
+      } else if (lower.includes('status = $1')) {
+        build.status = params[0];
+        build.updated_at = new Date().toISOString();
+        updated = build;
+      }
+    }
+    return { rows: updated ? [{ ...updated }] : [], rowCount: updated ? 1 : 0 };
+  }
+
   if (lower.startsWith('update user_settings')) {
     let updated = null;
     for (const [id, s] of fallbackStore.user_settings.entries()) {

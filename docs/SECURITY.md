@@ -26,3 +26,4 @@ Pipeline One is architected with security as a foundational principle:
 - Authentication endpoints: 20 requests/15 minutes.
 - File upload endpoints: 15 uploads/10 minutes.
 - Strict schema validation enforced on all JSON requests via Zod.
+

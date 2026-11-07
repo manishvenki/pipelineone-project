@@ -65,3 +65,4 @@ test('Security Utils - OAuth State Validation & HMAC signature', () => {
   const expiredState = `${userId}.randomtoken.${Date.now() - 3600000}.invalidsig`;
   assert.equal(validateSecureState(expiredState), null);
 });
+

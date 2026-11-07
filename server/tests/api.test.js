@@ -160,3 +160,4 @@ test('API - User Registration & Authentication Flow', async () => {
   });
   assert.equal(delRes.status, 200);
 });
+

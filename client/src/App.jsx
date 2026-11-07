@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import BuildsPage from './pages/BuildsPage';
 import DeploymentsPage from './pages/DeploymentsPage';
 import ActivityPage from './pages/ActivityPage';
 import SettingsPage from './pages/SettingsPage';
@@ -95,6 +96,7 @@ export const App = () => {
               <Route path="projects" element={<ProjectsPage />} />
               <Route path="projects/:id" element={<ProjectDetailPage />} />
               <Route path="integrations" element={<IntegrationsPage />} />
+              <Route path="builds" element={<BuildsPage />} />
               <Route path="deployments" element={<DeploymentsPage />} />
               <Route path="activity" element={<ActivityPage />} />
               <Route path="settings" element={<SettingsPage />} />
@@ -110,3 +112,4 @@ export const App = () => {
 };
 
 export default App;
+

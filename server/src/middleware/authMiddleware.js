@@ -17,6 +17,11 @@ export const requireAuth = async (req, res, next) => {
       token = req.cookies.pipeline_token;
     }
 
+    // 3. Fallback to query parameter (needed for browser EventSource SSE streams)
+    if (!token && req.query && req.query.token) {
+      token = req.query.token;
+    }
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -48,3 +53,4 @@ export const requireAuth = async (req, res, next) => {
 };
 
 export default requireAuth;
+

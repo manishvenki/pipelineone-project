@@ -13,3 +13,4 @@ router.put('/settings', requireAuth, authController.updateSettings);
 router.get('/activity', requireAuth, authController.getActivity);
 
 export default router;
+

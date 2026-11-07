@@ -22,10 +22,18 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
+  Container,
+  Play,
+  Check,
+  XCircle,
+  StopCircle,
+  ArrowRight
 } from 'lucide-react';
 import { getProjectById, deleteProject } from '../services/projectService';
+import { listDockerBuilds } from '../services/integrationService';
 import { useNotification } from '../context/NotificationContext';
 import Badge from '../components/common/Badge';
+import DockerBuildModal from '../components/builds/DockerBuildModal';
 
 export const ProjectDetailPage = () => {
   const { id } = useParams();
@@ -33,12 +41,15 @@ export const ProjectDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // overview, source, deployments
   const [deleting, setDeleting] = useState(false);
+  const [isBuildModalOpen, setIsBuildModalOpen] = useState(false);
+  const [builds, setBuilds] = useState([]);
 
   const notify = useNotification();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadProject();
+    loadBuilds();
   }, [id]);
 
   const loadProject = async () => {
@@ -50,6 +61,17 @@ export const ProjectDetailPage = () => {
       notify.error('Could not load project details: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBuilds = async () => {
+    try {
+      const res = await listDockerBuilds(id);
+      if (res.builds) {
+        setBuilds(res.builds);
+      }
+    } catch (err) {
+      console.error('Failed to load project builds', err);
     }
   };
 
@@ -93,6 +115,35 @@ export const ProjectDetailPage = () => {
   const meta = typeof project.metadata === 'string' ? JSON.parse(project.metadata) : project.metadata || {};
   const isGitHub = project.source_type === 'github';
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <CheckCircle2 className="w-3 h-3" /> Completed
+          </span>
+        );
+      case 'in_progress':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/30">
+            <Loader2 className="w-3 h-3 animate-spin" /> In Progress
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/30">
+            <XCircle className="w-3 h-3" /> Failed
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-800 text-slate-400">
+            {status}
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Breadcrumb & Navigation */}
@@ -104,14 +155,24 @@ export const ProjectDetailPage = () => {
           <ArrowLeft className="w-4 h-4" /> Back to My Projects
         </Link>
 
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="px-3.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-500/30 rounded-xl transition-colors flex items-center gap-1.5"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          {deleting ? 'Deleting...' : 'Delete Project'}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setIsBuildModalOpen(true)}
+            className="px-3.5 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-500 font-medium rounded-xl transition shadow-md shadow-blue-900/30 flex items-center gap-1.5"
+          >
+            <Container className="w-3.5 h-3.5" />
+            Build Docker Image
+          </button>
+
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-3.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-500/30 rounded-xl transition-colors flex items-center gap-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {deleting ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
       </div>
 
       {/* Project Banner Card */}
@@ -177,8 +238,8 @@ export const ProjectDetailPage = () => {
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Rocket className="w-3.5 h-3.5" /> CI/CD Deployments
-            <Badge variant="comingSoon" size="xs">Phase 2</Badge>
+            <Rocket className="w-3.5 h-3.5" /> Container & Builds
+            <span className="w-2 h-2 rounded-full bg-blue-500 ml-1" />
           </button>
         </div>
       </div>
@@ -193,7 +254,7 @@ export const ProjectDetailPage = () => {
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
                 <span className="text-slate-400">Framework / Tooling</span>
-                <span className="font-semibold text-white">{project.framework || 'HTML5 / Vanilla'}</span>
+                <span className="font-semibold text-white font-mono">{project.detected_framework || project.framework || 'pure_html'}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
                 <span className="text-slate-400">Build Command</span>
@@ -216,19 +277,25 @@ export const ProjectDetailPage = () => {
 
           <div className="p-5 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-purple-400" /> Automation Pipeline Readiness
+              <Container className="w-4 h-4 text-purple-400" /> Container Packaging Specs
             </h3>
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-3 font-mono">
-              <div className="text-slate-500"># Generated build specification</div>
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-2.5 font-mono">
+              <div className="text-slate-500"># Docker multi-stage generator</div>
               <div>project: {project.slug}</div>
-              <div>type: static-web</div>
-              <div>framework: {project.framework || 'vanilla'}</div>
+              <div>base_image: {project.project_type === 'react_vite' ? 'node:20-alpine -> nginx:alpine-slim' : 'nginx:alpine-slim'}</div>
               <div>publish_dir: {project.output_directory || '.'}</div>
-              {project.build_command && <div>script: {project.build_command}</div>}
+              <div>exposed_port: 80/tcp</div>
               <div className="text-emerald-400 pt-2 flex items-center gap-1.5 font-sans">
-                <CheckCircle2 className="w-4 h-4" /> Ready for Phase 2 automated build containerization
+                <CheckCircle2 className="w-4 h-4" /> Ready for Docker Containerization Engine
               </div>
             </div>
+
+            <button
+              onClick={() => setIsBuildModalOpen(true)}
+              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs transition border border-slate-700 flex items-center justify-center gap-2"
+            >
+              <Play className="w-3.5 h-3.5 fill-white" /> Launch Container Build Now
+            </button>
           </div>
         </div>
       )}
@@ -320,21 +387,82 @@ export const ProjectDetailPage = () => {
         </div>
       )}
 
-      {/* Tab 3: CI/CD Deployments (Phase 2 Preview) */}
+      {/* Tab 3: Container & Builds */}
       {activeTab === 'deployments' && (
-        <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 space-y-4">
-          <div className="w-12 h-12 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
-            <Rocket className="w-6 h-6" />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+            <div>
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <Container className="w-5 h-5 text-blue-400" /> Docker Builds History
+              </h3>
+              <p className="text-xs text-slate-400">Container images built for this static project.</p>
+            </div>
+
+            <button
+              onClick={() => setIsBuildModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow"
+            >
+              <Play className="w-3.5 h-3.5 fill-white" /> Trigger Build
+            </button>
           </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-white">CI/CD Engine — Phase 2</h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Automated build containers, Docker Hub synchronization, Jenkins execution pipelines, and Vercel edge deployment will be integrated in Phase 2.
-            </p>
-          </div>
-          <Badge variant="comingSoon" size="sm">Pipeline One Phase 2 Objective</Badge>
+
+          {builds.length === 0 ? (
+            <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
+              <Container className="w-10 h-10 text-slate-600 mx-auto" />
+              <h4 className="text-sm font-semibold text-white">No container builds yet</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                Trigger your first Docker container build to create an optimized production Nginx container for this project.
+              </p>
+              <button
+                onClick={() => setIsBuildModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs transition shadow"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" /> Build Docker Image
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {builds.map((b) => (
+                <div
+                  key={b.id}
+                  className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-semibold text-white font-mono">{b.image_name}:{b.image_tag}</span>
+                      {getStatusBadge(b.status)}
+                    </div>
+                    <div className="text-slate-400 text-[11px] font-mono">
+                      Started: {new Date(b.created_at).toLocaleString()} &bull; Duration: {b.duration_seconds ? `${b.duration_seconds}s` : 'In progress'}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/dashboard/builds?id=${b.id}`}
+                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-medium rounded-lg transition inline-flex items-center gap-1.5"
+                    >
+                      <Terminal className="w-3.5 h-3.5" />
+                      View Logs
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Docker Build Modal */}
+      <DockerBuildModal
+        isOpen={isBuildModalOpen}
+        onClose={() => setIsBuildModalOpen(false)}
+        initialProjectId={id}
+        onBuildTriggered={(newBuild) => {
+          setBuilds((prev) => [newBuild, ...prev]);
+        }}
+      />
     </div>
   );
 };

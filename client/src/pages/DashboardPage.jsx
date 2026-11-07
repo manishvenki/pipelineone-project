@@ -15,9 +15,11 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  Container,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getProjects, getUserActivity } from '../services/projectService';
+import { listDockerBuilds } from '../services/integrationService';
 import Badge from '../components/common/Badge';
 import ConnectGitHubModal from '../components/integrations/ConnectGitHubModal';
 import RepoSelectorModal from '../components/projects/RepoSelectorModal';
@@ -27,6 +29,7 @@ export const DashboardPage = () => {
   const { user, refreshUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [buildsCount, setBuildsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -44,12 +47,14 @@ export const DashboardPage = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [projData, actData] = await Promise.all([
+      const [projData, actData, buildsData] = await Promise.allSettled([
         getProjects(),
         getUserActivity(8),
+        listDockerBuilds(),
       ]);
-      setProjects(projData.projects || []);
-      setActivities(actData.activities || []);
+      if (projData.status === 'fulfilled') setProjects(projData.value?.projects || []);
+      if (actData.status === 'fulfilled') setActivities(actData.value?.activities || []);
+      if (buildsData.status === 'fulfilled') setBuildsCount(buildsData.value?.builds?.length || 0);
     } catch {
       // Ignore
     } finally {
@@ -192,15 +197,18 @@ export const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Successful Deployments */}
+        {/* Docker Container Builds */}
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-            <span>Deployments</span>
-            <Rocket className="w-4 h-4 text-emerald-400" />
+            <span>Docker Builds</span>
+            <Container className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-2xl font-bold text-white">0</div>
+          <div className="text-2xl font-bold text-white">{buildsCount}</div>
           <div className="text-[11px] text-slate-500 flex items-center gap-1">
-            <span className="text-amber-400">CI/CD Engine:</span> Scheduled for Phase 2
+            <Link to="/dashboard/builds" className="text-blue-400 hover:underline flex items-center gap-1">
+              <span>View build console</span>
+              <ArrowRight className="w-2.5 h-2.5" />
+            </Link>
           </div>
         </div>
 
@@ -400,3 +408,4 @@ export const DashboardPage = () => {
 };
 
 export default DashboardPage;
+

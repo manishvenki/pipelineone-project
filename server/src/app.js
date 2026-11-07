@@ -12,6 +12,10 @@ import integrationRoutes from './routes/integrationRoutes.js';
 import githubRoutes from './routes/githubRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
+import dockerBuildRoutes from './routes/dockerBuildRoutes.js';
+import dockerHubRoutes from './routes/dockerHubRoutes.js';
+import jenkinsRoutes from './routes/jenkinsRoutes.js';
+import vercelRoutes from './routes/vercelRoutes.js';
 
 const app = express();
 
@@ -61,6 +65,12 @@ app.use('/api/integrations', integrationRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/projects', projectRoutes);
 
+// Phase 2 Direct API routes
+app.use('/api/docker', dockerBuildRoutes);
+app.use('/api/dockerhub', dockerHubRoutes);
+app.use('/api/jenkins', jenkinsRoutes);
+app.use('/api/vercel', vercelRoutes);
+
 // Root route
 app.get('/', (req, res) => {
   res.json({
@@ -82,3 +92,4 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 export default app;
+

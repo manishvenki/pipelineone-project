@@ -142,3 +142,4 @@ export const analyzeStaticProject = (fileList = [], packageJsonContent = null) =
 export default {
   analyzeStaticProject,
 };
+

@@ -107,3 +107,4 @@ export const Navbar = ({ onToggleSidebar, isMobileMenuOpen }) => {
 };
 
 export default Navbar;
+

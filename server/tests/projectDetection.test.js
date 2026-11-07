@@ -71,3 +71,4 @@ test('Project Detection - Astro Static Site', () => {
   assert.equal(analysis.outputDirectory, 'dist');
   assert.equal(analysis.requiresBuild, true);
 });
+

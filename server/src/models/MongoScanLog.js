@@ -34,3 +34,4 @@ const ProjectScanLogSchema = new mongoose.Schema(
 
 export const ProjectScanLog = mongoose.models.ProjectScanLog || mongoose.model('ProjectScanLog', ProjectScanLogSchema);
 export default ProjectScanLog;
+

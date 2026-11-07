@@ -104,7 +104,7 @@ export const getUserById = async (userId) => {
 
   // Fetch connected integrations (mask tokens for security)
   const integrationsRes = await db.query(
-    'SELECT provider, provider_username, connected_at FROM connected_integrations WHERE user_id = $1',
+    'SELECT provider, provider_username, metadata, connected_at FROM connected_integrations WHERE user_id = $1',
     [userId]
   );
 
@@ -117,10 +117,12 @@ export const getUserById = async (userId) => {
 
   for (const row of integrationsRes.rows) {
     if (user.integrations[row.provider]) {
+      const meta = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata || {};
       user.integrations[row.provider] = {
         connected: true,
         username: row.provider_username,
         connectedAt: row.connected_at,
+        ...meta,
       };
     }
   }
@@ -156,3 +158,4 @@ export default {
   getUserById,
   updateUserSettings,
 };
+
